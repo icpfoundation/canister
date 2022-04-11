@@ -9,7 +9,7 @@ pub enum Authority {
     // You can read and modify the basic information of the project,
     // but you can't operate more core functions, such as deleting canisters
     ReadAndWrite,
-    //You can do anything
+    // You can do anything
     Operational,
 }
 

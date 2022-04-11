@@ -1,3 +1,51 @@
+
+type Authority = variant {
+    ReadOnly:null;
+    ReadAndWrite:null;
+    Operational:null;
+};
+
+type Member = record {
+    name:text;
+    profile:Authority;
+    identity:principal;
+};
+
+type Project = record {
+    id: nat64;
+    name: text;
+    description: text;
+    create_by: principal;
+    create_time: nat64;
+    git_repo_url: text;
+    visibility: Authority;
+    in_group: nat64;
+    members:service {
+        get:(principal) -> (opt Member);
+        put:(principal,Member) -> ();
+    };
+};
+
+type Group = record {
+    id: nat64;
+    name: text;
+    description: text;
+    visibility: Authority;
+    create_time: nat64;
+    projects:service {
+        get:(nat64) -> (opt Project);
+        put:(nat64,Project) -> ();
+    };
+    members:service {
+        get:(principal) -> (opt Member);
+        put:(principal,Member) -> ();
+    };
+};
+type sss = service{
+    get:(nat) -> (opt bool);
+    put:(nat,bool) -> ();
+};
 service :{
-    
+    get_group:(nat64) -> (opt Group) query;
+    mock_test_add_group:() ->();
 }
