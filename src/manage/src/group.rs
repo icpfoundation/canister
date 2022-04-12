@@ -3,9 +3,11 @@ use crate::member::Member;
 use crate::operation::Operation;
 use crate::project::Project;
 use ic_cdk::api::caller;
-use ic_cdk::export::candid::{CandidType, Deserialize};
+use ic_cdk::export::candid::{Deserialize};
+use candid::CandidType;
 use ic_cdk::export::Principal;
 use std::collections::HashMap;
+
 
 #[derive(CandidType, Debug, Deserialize, Clone)]
 pub struct Group {
@@ -96,9 +98,9 @@ impl Group {
 
     pub fn storage(self) -> Result<(), String> {
         let id = self.id;
-        if !crate::GroupStorage.read().unwrap().contains_key(&id) {
-            return Err("project iD already exists".to_string());
-        }
+        // if !crate::GroupStorage.read().unwrap().contains_key(&id) {
+        //     return Err("project iD already exists".to_string());
+        // }
         crate::GroupStorage.write().unwrap().insert(id, self);
         Ok(())
     }

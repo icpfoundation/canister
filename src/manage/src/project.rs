@@ -5,6 +5,7 @@ use ic_cdk::api::caller;
 use ic_cdk::export::candid::{CandidType, Deserialize};
 use ic_cdk::export::Principal;
 use std::collections::HashMap;
+
 #[derive(CandidType, Debug, Deserialize, Clone)]
 pub struct Project {
     pub id: u64,

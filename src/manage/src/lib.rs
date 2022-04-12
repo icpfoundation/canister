@@ -2,21 +2,26 @@ use ic_cdk_macros::*;
 use std::collections::HashMap;
 mod authority;
 mod group;
+mod manage;
 mod member;
 mod operation;
 mod project;
+mod types;
 use authority::Authority;
+use candid::CandidType;
 use group::Group;
+use ic_cdk::export::candid::{Deserialize, Nat};
+use ic_cdk::export::Principal;
+use manage::{CanisterSettings, ManageCanister};
 use member::Member;
 use project::Project;
 use std::sync::RwLock;
-use ic_cdk::export::candid::{Deserialize, Nat};
 #[macro_use]
 extern crate lazy_static;
 
 lazy_static! {
-    pub static ref ProjectRef: u64 = 0;
-    pub static ref GroupRef: u64 = 0;
+    pub static ref ProjectNonce: u64 = 0;
+    pub static ref GroupNonce: u64 = 0;
     pub static ref ProjectStorage: RwLock<HashMap<u64, Project>> = RwLock::new(HashMap::new());
     pub static ref GroupStorage: RwLock<HashMap<u64, Group>> = RwLock::new(HashMap::new());
 }
@@ -44,7 +49,7 @@ fn mock_test_add_group() {
         1u64,
         &members,
     )];
-   let group =  Group::new(
+    let group = Group::new(
         1u64,
         "group1",
         "group1",
@@ -52,5 +57,22 @@ fn mock_test_add_group() {
         &project,
         &members,
     );
-    group.storage();
+    group.storage().unwrap();
+}
+
+#[update]
+async fn mock_test_set_controllers(canister_id: Principal) ->Result<(), String>{
+    let controllers: Option<Vec<Principal>> = Some(vec![ic_cdk::api::caller()]);
+    let compute_allocation: Nat = "0".parse().unwrap();
+    let memory_allocation: Nat = "0".parse().unwrap();
+    let freezing_threshold: Nat = "2_592_000".parse().unwrap();
+
+    let canister_settings = CanisterSettings::new(
+        controllers,
+        Some(compute_allocation),
+        Some(memory_allocation),
+        Some(freezing_threshold),
+    );
+    let mange_canister = ManageCanister::new(canister_id, canister_settings);
+    mange_canister.set_controller().await
 }
