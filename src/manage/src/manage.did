@@ -37,8 +37,37 @@ type Result = variant{
     Ok:null;
     Err:text;
 };
+
+type CanisterStatus = variant{
+    running:null;
+    stopping:null;
+    stopped:null;
+};
+
+type CanisterSettings = record {
+    controllers: opt vec principal;
+    compute_allocation: opt nat;
+    memory_allocation: opt nat;
+    freezing_threshold:  opt nat;
+};
+
+
+type CanisterStatusResponse  = record{
+     status: CanisterStatus;
+     settings: CanisterSettings;
+     module_hash: opt vec nat8;
+     memory_size: nat;
+     cycles: nat;
+};
+
+type CanisterStatusRes = variant{
+    Ok:CanisterStatusResponse;
+    Err:text;
+};
+
 service :{
     get_group:(nat64) -> (opt Group) query;
     mock_test_add_group:() ->();
     mock_test_set_controllers:(principal) ->(Result);
+    get_canister_status:(principal)->(CanisterStatusRes);
 }

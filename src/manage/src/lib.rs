@@ -12,7 +12,7 @@ use candid::CandidType;
 use group::Group;
 use ic_cdk::export::candid::{Deserialize, Nat};
 use ic_cdk::export::Principal;
-use manage::{CanisterSettings, ManageCanister};
+use manage::{CanisterSettings, ManageCanister,CanisterStatusResponse};
 use member::Member;
 use project::Project;
 use std::sync::RwLock;
@@ -61,7 +61,7 @@ fn mock_test_add_group() {
 }
 
 #[update]
-async fn mock_test_set_controllers(canister_id: Principal) ->Result<(), String>{
+async fn mock_test_set_controllers(canister_id: Principal) -> Result<(), String> {
     let controllers: Option<Vec<Principal>> = Some(vec![ic_cdk::api::caller()]);
     let compute_allocation: Nat = "0".parse().unwrap();
     let memory_allocation: Nat = "0".parse().unwrap();
@@ -75,4 +75,9 @@ async fn mock_test_set_controllers(canister_id: Principal) ->Result<(), String>{
     );
     let mange_canister = ManageCanister::new(canister_id, canister_settings);
     mange_canister.set_controller().await
+}
+
+#[update]
+async fn get_canister_status(canister: Principal) -> Result<CanisterStatusResponse, String> {
+    ManageCanister::get_canister_status(canister).await
 }
