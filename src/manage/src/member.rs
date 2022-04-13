@@ -8,3 +8,13 @@ pub struct Member{
     pub profile:Authority,
     pub identity:Principal,
 }
+
+impl Member{
+    pub fn new(name:String,profile:Authority,identity:Principal) -> Self{
+        Self{
+            name:name,
+            profile:profile,
+            identity:identity,
+        }
+    }
+}

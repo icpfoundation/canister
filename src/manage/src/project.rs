@@ -9,28 +9,28 @@ use std::collections::HashMap;
 #[derive(CandidType, Debug, Deserialize, Clone)]
 pub struct Project {
     pub id: u64,
+    pub create_time: u64,
+    pub in_group: u64,
+    pub visibility: Authority,
+    pub create_by: Principal,
     pub name: String,
     pub description: String,
-    pub create_by: Principal,
-    pub create_time: u64,
     pub git_repo_url: String,
-    pub visibility: Authority,
-    pub in_group: u64,
     pub members: HashMap<Principal, Member>,
 }
 
 impl Project {
     pub fn new(
         id: u64,
+        create_time:u64,
+        group: u64,
         name: &str,
         description: &str,
         create_by: Principal,
         git: &str,
         visibility: Authority,
-        group: u64,
         members: &[Member],
     ) -> Self {
-        let create_time = ic_cdk::api::time();
         let mut member: HashMap<Principal, Member> = HashMap::new();
         for i in members.iter() {
             member.insert(i.identity, i.clone());
@@ -48,7 +48,7 @@ impl Project {
         }
     }
 
-    fn identity_check(&self) -> Result<(), String> {
+    fn identity_check(&self, opt: Authority) -> Result<(), String> {
         let operated = self.visibility.clone();
 
         match self.members.get(&caller()) {
@@ -56,7 +56,7 @@ impl Project {
                 return Err("Not in the group member list".to_string());
             }
             Some(member) => {
-                if !Authority::authority_check(member.profile.clone(), operated) {
+                if !Authority::authority_check(member.profile.clone(), operated, opt) {
                     return Err("project does not exist".to_string());
                 }
                 Ok(())
@@ -73,33 +73,24 @@ impl Project {
         Ok(())
     }
 
-    pub fn get_project_by_id(id: u64) -> Option<Project> {
-        if !crate::ProjectStorage.read().unwrap().contains_key(&id) {
-            return None;
+
+
+    pub fn add_member(&mut self, member: Member) -> Result<(), String> {
+        if let Err(err) = self.identity_check(Authority::Write) {
+            return Err(err);
         }
-        Some(
-            crate::ProjectStorage
-                .read()
-                .unwrap()
-                .get(&id)
-                .unwrap()
-                .clone(),
-        )
+
+        self.members.insert(member.identity, member);
+
+        Ok(())
     }
 
-    pub fn update_members(&mut self, member: Member, opt: Operation) -> Result<(), String> {
-        if let Err(err) =  self.identity_check(){
-            return Err(err)
-        }
-        match opt {
-            Operation::Insert => {
-                self.members.insert(member.identity, member);
-            }
-            Operation::Delete => {
-                self.members.remove(&member.identity);
-            }
+    pub fn remove_member(&mut self, member: Principal) -> Result<(), String> {
+        if let Err(err) = self.identity_check(Authority::Write) {
+            return Err(err);
         }
 
+        self.members.remove(&member);
         Ok(())
     }
 }

@@ -2,34 +2,34 @@ use crate::authority::Authority;
 use crate::member::Member;
 use crate::operation::Operation;
 use crate::project::Project;
-use ic_cdk::api::caller;
-use ic_cdk::export::candid::{Deserialize};
 use candid::CandidType;
+use ic_cdk::api::caller;
+use ic_cdk::export::candid::Deserialize;
 use ic_cdk::export::Principal;
 use std::collections::HashMap;
 
-
 #[derive(CandidType, Debug, Deserialize, Clone)]
 pub struct Group {
-    id: u64,
-    name: String,
-    description: String,
-    visibility: Authority,
-    create_time: u64,
-    projects: HashMap<u64, Project>,
-    members: HashMap<Principal, Member>,
+    pub id: u64,
+    pub create_time: u64,
+    pub visibility: Authority,
+    pub name: String,
+    pub description: String,
+    pub projects: HashMap<u64, Project>,
+    pub members: HashMap<Principal, Member>,
 }
 
 impl Group {
     pub fn new(
         id: u64,
+        create_time:u64,
+        visibility: Authority,
         name: &str,
         description: &str,
-        visibility: Authority,
         projects: &[Project],
         members: &[Member],
     ) -> Self {
-        let create_time = ic_cdk::api::time();
+    
         let mut member: HashMap<Principal, Member> = HashMap::new();
         let mut project: HashMap<u64, Project> = HashMap::new();
         for i in members.iter() {
@@ -40,68 +40,91 @@ impl Group {
         }
         Self {
             id: id,
+            create_time: create_time,
             name: name.to_string(),
             description: description.to_string(),
             visibility: visibility,
-            create_time: create_time,
             projects: project,
             members: member,
         }
     }
 
-    fn identity_check(&self) -> Result<(), String> {
+    fn identity_check(&self, opt: Authority) -> Result<(), String> {
         let operated = self.visibility.clone();
-
         match self.members.get(&caller()) {
             None => {
-                return Err("Not in the group member list".to_string());
+                return Err("not in the group member list".to_string());
             }
             Some(member) => {
-                if !Authority::authority_check(member.profile.clone(), operated) {
-                    return Err("project does not exist".to_string());
+                if !Authority::authority_check(member.profile.clone(), operated.clone(), opt.clone()) {
+                    return Err(format!("permission verification failed: group permissions: {:?},user permissions: {:?},opt permissions: {:?}",operated,member.profile.clone(),opt) );
                 }
                 Ok(())
             }
         }
     }
 
-    pub fn update_project(&mut self, project: Project, opt: Operation) -> Result<(), String> {
-        if let Err(err) = self.identity_check() {
-            return Err(err);
-        }
-        match opt {
-            Operation::Insert => {
-                self.projects.insert(project.id, project);
-            }
-            Operation::Delete => {
-                self.projects.remove(&project.id);
-            }
-        }
+    pub fn add_project(&mut self, project: Project) -> Result<(), String> {
+        self.identity_check(Authority::Write)?;
+        self.projects.insert(project.id, project);
+        Ok(())
+    }
+
+    pub fn remove_project(&mut self, project_id: u64) -> Result<(), String> {
+        self.identity_check(Authority::Write)?;
+        self.projects.remove(&project_id);
 
         Ok(())
     }
 
-    pub fn update_members(&mut self, member: Member, opt: Operation) -> Result<(), String> {
-        if let Err(err) = self.identity_check() {
-            return Err(err);
-        }
-        match opt {
-            Operation::Insert => {
-                self.members.insert(member.identity, member);
-            }
-            Operation::Delete => {
-                self.members.remove(&member.identity);
-            }
-        }
+    pub fn add_member(&mut self, member: Member) -> Result<(), String> {
+        self.identity_check(Authority::Write)?;
+        self.members.insert(member.identity, member);
         Ok(())
     }
 
+    pub fn remove_member(&mut self, member: Principal) -> Result<(), String> {
+        self.identity_check(Authority::Write)?;
+        self.members.remove(&member);
+        Ok(())
+    }
     pub fn storage(self) -> Result<(), String> {
         let id = self.id;
-        // if !crate::GroupStorage.read().unwrap().contains_key(&id) {
-        //     return Err("project iD already exists".to_string());
-        // }
+        if !crate::GroupStorage.read().unwrap().contains_key(&id) {
+            return Err("project iD already exists".to_string());
+        }
         crate::GroupStorage.write().unwrap().insert(id, self);
         Ok(())
     }
+
+    pub fn get_group_info(group_id: u64) -> Result<Group, String> {
+        match crate::GroupStorage.read().unwrap().get(&group_id) {
+            None => return Err("Group not found".to_string()),
+            Some(group) => {
+                group.identity_check(Authority::Read)?;
+                return Ok(group.clone());
+            }
+        }
+    }
+
+    pub fn get_group_projects_info(&self) -> Result<Option<Vec<Project>>, String> {
+        self.identity_check(Authority::Read)?;
+        return Ok(Some(self.projects.values().map(|i| i.clone()).collect()));
+    }
+
+    pub fn update_member_authority(
+        &mut self,
+        member: Principal,
+        authority: Authority,
+    ) -> Result<(), String> {
+        self.identity_check(Authority::Write)?;
+        match self.members.get_mut(&member) {
+            None => return Err("member information not found".to_string()),
+            Some(data) => {
+                data.profile = authority;
+                return Ok(());
+            }
+        }
+    }
+
 }

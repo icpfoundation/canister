@@ -1,7 +1,7 @@
 
 type Authority = variant {
-    ReadOnly:null;
-    ReadAndWrite:null;
+    Read:null;
+    Write:null;
     Operational:null;
 };
 
@@ -65,9 +65,38 @@ type CanisterStatusRes = variant{
     Err:text;
 };
 
+type Profile = variant{
+    Public:null;
+    Private:null;
+};
+
+type User = record {
+     user_name: text;
+     profile: Profile;
+     identity: principal;
+     groups: vec record {nat64; Group };
+};
+
+type UserRes = variant{
+    Ok:User;
+    Err:text;
+};
+
+type OptGroupRes = variant{
+    Ok:null;
+    Err:text;
+};
+
 service :{
     get_group:(nat64) -> (opt Group) query;
-    mock_test_add_group:() ->();
     mock_test_set_controllers:(principal) ->(Result);
     get_canister_status:(principal)->(CanisterStatusRes);
+    get_user_info:(principal) -> (UserRes)query;
+    add_user:(text,Profile) -> (OptGroupRes);
+    add_group:(Group) -> (OptGroupRes);
+    remove_group:(nat64) -> (OptGroupRes);
+    add_project:(nat64,Project) -> (OptGroupRes);
+    remove_project:(nat64,nat64) -> (OptGroupRes);
+    add_group_member:(nat64,Member) ->(OptGroupRes);
+    remove_group_member:(nat64,principal) ->(OptGroupRes);
 }

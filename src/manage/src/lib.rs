@@ -7,15 +7,18 @@ mod member;
 mod operation;
 mod project;
 mod types;
+mod user;
 use authority::Authority;
 use candid::CandidType;
 use group::Group;
 use ic_cdk::export::candid::{Deserialize, Nat};
 use ic_cdk::export::Principal;
-use manage::{CanisterSettings, ManageCanister,CanisterStatusResponse};
+use manage::{CanisterSettings, CanisterStatusResponse, ManageCanister};
 use member::Member;
 use project::Project;
 use std::sync::RwLock;
+use user::{Profile, User};
+
 #[macro_use]
 extern crate lazy_static;
 
@@ -24,6 +27,7 @@ lazy_static! {
     pub static ref GroupNonce: u64 = 0;
     pub static ref ProjectStorage: RwLock<HashMap<u64, Project>> = RwLock::new(HashMap::new());
     pub static ref GroupStorage: RwLock<HashMap<u64, Group>> = RwLock::new(HashMap::new());
+    pub static ref UserStorage: RwLock<HashMap<Principal, User>> = RwLock::new(HashMap::new());
 }
 #[init]
 fn init() {}
@@ -37,28 +41,54 @@ fn get_group(group_id: u64) -> Option<Group> {
 }
 
 #[update]
-fn mock_test_add_group() {
-    let members: Vec<Member> = vec![];
-    let project: Vec<Project> = vec![Project::new(
-        1u64,
-        "project1",
-        "project1",
-        ic_cdk::api::caller(),
-        "https://github.com/icpfoundation/chain-cloud",
-        Authority::ReadOnly,
-        1u64,
-        &members,
-    )];
-    let group = Group::new(
-        1u64,
-        "group1",
-        "group1",
-        Authority::ReadOnly,
-        &project,
-        &members,
-    );
-    group.storage().unwrap();
+async fn get_canister_status(canister: Principal) -> Result<CanisterStatusResponse, String> {
+    ManageCanister::get_canister_status(canister).await
 }
+
+#[update]
+fn add_user(name:String,profile:Profile) -> Result<(),String> {
+    let user = User::new(name, profile, ic_cdk::caller());
+    user.storage()
+}
+
+#[update]
+fn add_group(group:Group) -> Result<(), String> {
+    User::add_group(ic_cdk::caller(), group)
+}
+
+#[update]
+fn remove_group(group_id:u64) -> Result<(), String> {
+    User::remove_group(ic_cdk::caller(),group_id)
+}
+
+#[query]
+fn get_user_info(user:Principal) -> Result<User, String> {
+    User::get_user_info(user)
+}
+
+#[update]
+fn add_project(group_id:u64,project:Project) -> Result<(), String> {
+    User::add_project(ic_cdk::caller(), group_id,project)
+}
+
+
+#[update]
+fn remove_project(group_id:u64,project_id:u64) -> Result<(), String> {
+    User::remove_project(ic_cdk::caller(), group_id,project_id)
+}
+
+
+#[update]
+fn add_group_member(group_id:u64,member:Member) -> Result<(),String>{
+    User::add_group_member(ic_cdk::caller(),group_id, member)
+}
+
+
+#[update]
+fn remove_group_member(group_id:u64,member:Principal) -> Result<(),String>{
+    User::remove_group_member(ic_cdk::caller(),group_id, member)
+}
+
 
 #[update]
 async fn mock_test_set_controllers(canister_id: Principal) -> Result<(), String> {
@@ -75,9 +105,4 @@ async fn mock_test_set_controllers(canister_id: Principal) -> Result<(), String>
     );
     let mange_canister = ManageCanister::new(canister_id, canister_settings);
     mange_canister.set_controller().await
-}
-
-#[update]
-async fn get_canister_status(canister: Principal) -> Result<CanisterStatusResponse, String> {
-    ManageCanister::get_canister_status(canister).await
 }
