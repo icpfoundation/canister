@@ -3,16 +3,11 @@ use crate::group::Group;
 use crate::member::Member;
 use crate::operation::Operation;
 use crate::project::Project;
+use crate::types::Profile;
 use ic_cdk::api::caller;
 use ic_cdk::export::candid::{CandidType, Deserialize};
 use ic_cdk::export::Principal;
 use std::collections::HashMap;
-
-#[derive(CandidType, Debug, Deserialize, Clone)]
-pub enum Profile {
-    Public,
-    Private,
-}
 
 #[derive(CandidType, Debug, Deserialize, Clone)]
 pub struct User {
@@ -43,13 +38,27 @@ impl User {
         match crate::UserStorage.read().unwrap().get(&identity) {
             None => return Err("user does not exist".to_string()),
             Some(user) => {
-                if caller() != identity{
-                    if let Profile::Private = user.profile{
+                if caller() != identity {
+                    if let Profile::Private = user.profile {
                         return Err("user information is private and cannot be viewed".to_string());
                     }
                 }
-                return Ok(user.clone())
-            },
+
+                let mut cp_user = user.clone();
+                let publick_group: HashMap<u64, Group> = cp_user
+                    .groups
+                    .into_iter()
+                    .filter(|(k, v)| {
+                        if let Profile::Public = v.visibility {
+                            return true;
+                        };
+                        return false;
+                    })
+                    .collect();
+
+                cp_user.groups = publick_group;
+                Ok(cp_user)
+            }
         }
     }
 
@@ -90,32 +99,35 @@ impl User {
         }
     }
 
-    pub fn add_project(identity:Principal, group_id: u64, project: Project) -> Result<(), String> {
+    pub fn add_project(identity: Principal, group_id: u64, project: Project) -> Result<(), String> {
         match crate::UserStorage.write().unwrap().get_mut(&identity) {
             None => return Err("user does not exist".to_string()),
-            Some(user) => {
-                match user.groups.get_mut(&group_id) {
-                    None => return Err("Group does not exist".to_string()),
-                    Some(group) => group.add_project(project),
-                }
-            }
-        }
-      
-    }
-
-    pub fn remove_project(identity:Principal, group_id: u64, project_id: u64) -> Result<(), String> {
-        match crate::UserStorage.write().unwrap().get_mut(&identity) {
-            None => return Err("user does not exist".to_string()),
-            Some(user) => {
-                match user.groups.get_mut(&group_id) {
-                    None => return Err("Group does not exist".to_string()),
-                    Some(group) => group.remove_project(project_id),
-                }
-            }
+            Some(user) => match user.groups.get_mut(&group_id) {
+                None => return Err("Group does not exist".to_string()),
+                Some(group) => group.add_project(project),
+            },
         }
     }
 
-    pub fn add_group_member(identity:Principal, group_id: u64, member: Member) -> Result<(), String> {
+    pub fn remove_project(
+        identity: Principal,
+        group_id: u64,
+        project_id: u64,
+    ) -> Result<(), String> {
+        match crate::UserStorage.write().unwrap().get_mut(&identity) {
+            None => return Err("user does not exist".to_string()),
+            Some(user) => match user.groups.get_mut(&group_id) {
+                None => return Err("Group does not exist".to_string()),
+                Some(group) => group.remove_project(project_id),
+            },
+        }
+    }
+
+    pub fn add_group_member(
+        identity: Principal,
+        group_id: u64,
+        member: Member,
+    ) -> Result<(), String> {
         match crate::UserStorage.write().unwrap().get_mut(&identity) {
             None => return Err("user does not exist".to_string()),
             Some(user) => {
@@ -128,7 +140,11 @@ impl User {
         }
     }
 
-    pub fn remove_group_member(identity:Principal, group_id: u64, member: Principal) -> Result<(), String> {
+    pub fn remove_group_member(
+        identity: Principal,
+        group_id: u64,
+        member: Principal,
+    ) -> Result<(), String> {
         match crate::UserStorage.write().unwrap().get_mut(&identity) {
             None => return Err("user does not exist".to_string()),
             Some(user) => {
@@ -141,11 +157,18 @@ impl User {
         }
     }
 
-    pub fn storage(self) -> Result<(),String>{
-        if crate::UserStorage.read().unwrap().contains_key(&self.identity){
-            return Err("user already exists".to_string())
+    pub fn storage(self) -> Result<(), String> {
+        if crate::UserStorage
+            .read()
+            .unwrap()
+            .contains_key(&self.identity)
+        {
+            return Err("user already exists".to_string());
         }
-        crate::UserStorage.write().unwrap().insert(self.identity,self);
+        crate::UserStorage
+            .write()
+            .unwrap()
+            .insert(self.identity, self);
         Ok(())
     }
 }

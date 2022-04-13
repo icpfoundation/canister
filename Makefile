@@ -19,13 +19,13 @@ get_user_info:
 	dfx canister call manage get_user_info '(principal $(identity))'
 
 add_group:
-	dfx canister call manage add_group '(record {id = 10;create_time=100;name="aaa";description="bbb";visibility=variant {Write};projects = vec {};members = vec { record{0 =  principal $(identity);1 = record { name = "bb";profile = variant {Write}; identity = principal $(identity)}}}})'
+	dfx canister call manage add_group '(record {id = 10;create_time=100;name="aaa";description="bbb";visibility=variant {Private};projects = vec {};members = vec { record{0 =  principal $(identity);1 = record { name = "bb";profile = variant {Write}; identity = principal $(identity)}}}})'
 
 remove_group:
 	dfx canister call manage remove_group '(10)'
 
 add_project:
-	dfx canister call manage add_project '(10,record {id=1;name="bbb";description="bbb";create_by = principal $(identity);create_time = 100;git_repo_url = "www.****.git";visibility = variant {Read};in_group = 10;members = vec {}})'
+	dfx canister call manage add_project '(10,record {id=1;name="bbb";description="bbb";create_by = principal $(identity);create_time = 100;git_repo_url = "www.****.git";visibility = variant {Private};in_group = 10;members = vec {}})'
 
 remove_project:
 	dfx canister call manage remove_project '(10,1)'

@@ -15,7 +15,7 @@ pub enum Authority {
 
 
 impl Authority {
-    pub fn authority_check(operator: Authority, operated: Authority,opt:Authority) -> bool {
+    pub fn authority_check(operator: Authority,opt:Authority) -> bool {
         let opt = match opt {
             Self::Read => 1u8,
             Self::Write => 2u8,
@@ -28,16 +28,7 @@ impl Authority {
             Self::Operational => 4u8,
         };
 
-        let operated = match operated {
-            Self::Read => 1u8,
-            Self::Write => 2u8,
-            Self::Operational => 4u8,
-        };
-
-        if opt > operated{
-            return false
-        }
-        if operator >= operated {
+        if operator >= opt {
             return true;
         }
         return false;

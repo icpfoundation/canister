@@ -17,7 +17,8 @@ use manage::{CanisterSettings, CanisterStatusResponse, ManageCanister};
 use member::Member;
 use project::Project;
 use std::sync::RwLock;
-use user::{Profile, User};
+use user::User;
+use types::Profile;
 
 #[macro_use]
 extern crate lazy_static;

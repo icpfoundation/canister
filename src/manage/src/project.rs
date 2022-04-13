@@ -1,6 +1,7 @@
+use crate::operation::Operation;
 use crate::authority::Authority;
 use crate::member::Member;
-use crate::operation::Operation;
+use crate::types::Profile;
 use ic_cdk::api::caller;
 use ic_cdk::export::candid::{CandidType, Deserialize};
 use ic_cdk::export::Principal;
@@ -11,7 +12,7 @@ pub struct Project {
     pub id: u64,
     pub create_time: u64,
     pub in_group: u64,
-    pub visibility: Authority,
+    pub visibility: Profile,
     pub create_by: Principal,
     pub name: String,
     pub description: String,
@@ -28,7 +29,7 @@ impl Project {
         description: &str,
         create_by: Principal,
         git: &str,
-        visibility: Authority,
+        visibility: Profile,
         members: &[Member],
     ) -> Self {
         let mut member: HashMap<Principal, Member> = HashMap::new();
@@ -49,14 +50,12 @@ impl Project {
     }
 
     fn identity_check(&self, opt: Authority) -> Result<(), String> {
-        let operated = self.visibility.clone();
-
         match self.members.get(&caller()) {
             None => {
                 return Err("Not in the group member list".to_string());
             }
             Some(member) => {
-                if !Authority::authority_check(member.profile.clone(), operated, opt) {
+                if !Authority::authority_check(member.profile.clone(), opt) {
                     return Err("project does not exist".to_string());
                 }
                 Ok(())
@@ -89,8 +88,9 @@ impl Project {
         if let Err(err) = self.identity_check(Authority::Write) {
             return Err(err);
         }
-
         self.members.remove(&member);
         Ok(())
     }
+
+
 }

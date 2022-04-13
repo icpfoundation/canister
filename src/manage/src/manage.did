@@ -18,7 +18,7 @@ type Project = record {
     create_by: principal;
     create_time: nat64;
     git_repo_url: text;
-    visibility: Authority;
+    visibility: Profile;
     in_group: nat64;
     members:vec record { principal; Member; };
 };
@@ -27,7 +27,7 @@ type Group = record {
     id: nat64;
     name: text;
     description: text;
-    visibility: Authority;
+    visibility: Profile;
     create_time: nat64;
     projects:vec record { nat64; Project; };
     members: vec record { principal; Member; };

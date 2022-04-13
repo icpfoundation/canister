@@ -1,4 +1,5 @@
 use crate::authority::Authority;
+use crate::types::Profile;
 use crate::member::Member;
 use crate::operation::Operation;
 use crate::project::Project;
@@ -12,7 +13,7 @@ use std::collections::HashMap;
 pub struct Group {
     pub id: u64,
     pub create_time: u64,
-    pub visibility: Authority,
+    pub visibility: Profile,
     pub name: String,
     pub description: String,
     pub projects: HashMap<u64, Project>,
@@ -23,7 +24,7 @@ impl Group {
     pub fn new(
         id: u64,
         create_time:u64,
-        visibility: Authority,
+        visibility: Profile,
         name: &str,
         description: &str,
         projects: &[Project],
@@ -50,14 +51,13 @@ impl Group {
     }
 
     fn identity_check(&self, opt: Authority) -> Result<(), String> {
-        let operated = self.visibility.clone();
         match self.members.get(&caller()) {
             None => {
                 return Err("not in the group member list".to_string());
             }
             Some(member) => {
-                if !Authority::authority_check(member.profile.clone(), operated.clone(), opt.clone()) {
-                    return Err(format!("permission verification failed: group permissions: {:?},user permissions: {:?},opt permissions: {:?}",operated,member.profile.clone(),opt) );
+                if !Authority::authority_check(member.profile.clone(), opt.clone()) {
+                    return Err(format!("permission verification failed: user permissions: {:?},opt permissions: {:?}",member.profile.clone(),opt) );
                 }
                 Ok(())
             }
