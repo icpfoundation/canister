@@ -41,10 +41,10 @@ fn get_group(group_id: u64) -> Option<Group> {
     }
 }
 
-#[update]
-async fn get_canister_status(canister: Principal) -> Result<CanisterStatusResponse, String> {
-    ManageCanister::get_canister_status(canister).await
-}
+// #[update]
+// async fn get_canister_status(canister: Principal) -> Result<CanisterStatusResponse, String> {
+//     ManageCanister::get_canister_status(canister).await
+// }
 
 #[update]
 fn add_user(name:String,profile:Profile) -> Result<(),String> {

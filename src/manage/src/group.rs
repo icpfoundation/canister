@@ -1,8 +1,9 @@
 use crate::authority::Authority;
-use crate::types::Profile;
+use crate::manage::{CanisterSettings, CanisterStatusResponse, ManageCanister};
 use crate::member::Member;
 use crate::operation::Operation;
 use crate::project::Project;
+use crate::types::Profile;
 use candid::CandidType;
 use ic_cdk::api::caller;
 use ic_cdk::export::candid::Deserialize;
@@ -23,14 +24,13 @@ pub struct Group {
 impl Group {
     pub fn new(
         id: u64,
-        create_time:u64,
+        create_time: u64,
         visibility: Profile,
         name: &str,
         description: &str,
         projects: &[Project],
         members: &[Member],
     ) -> Self {
-    
         let mut member: HashMap<Principal, Member> = HashMap::new();
         let mut project: HashMap<u64, Project> = HashMap::new();
         for i in members.iter() {
@@ -56,8 +56,8 @@ impl Group {
                 return Err("not in the group member list".to_string());
             }
             Some(member) => {
-                if !Authority::authority_check(member.profile.clone(), opt.clone()) {
-                    return Err(format!("permission verification failed: user permissions: {:?},opt permissions: {:?}",member.profile.clone(),opt) );
+                if !Authority::authority_check(member.authority.clone(), opt.clone()) {
+                    return Err(format!("permission verification failed: user permissions: {:?},opt permissions: {:?}",member.authority.clone(),opt) );
                 }
                 Ok(())
             }
@@ -121,10 +121,75 @@ impl Group {
         match self.members.get_mut(&member) {
             None => return Err("member information not found".to_string()),
             Some(data) => {
-                data.profile = authority;
+                data.authority = authority;
                 return Ok(());
             }
         }
     }
 
+    pub fn update_git_repo_url(&mut self, project_id: u64, git: &str) -> Result<(), String> {
+        match self.projects.get_mut(&project_id) {
+            None => Err("Project does not exist".to_string()),
+            Some(project) => project.update_git_repo_url(git),
+        }
+    }
+
+    pub fn update_visibility(
+        &mut self,
+        project_id: u64,
+        visibility: Profile,
+    ) -> Result<(), String> {
+        match self.projects.get_mut(&project_id) {
+            None => Err("Project does not exist".to_string()),
+            Some(project) => project.update_visibility(visibility),
+        }
+    }
+
+    pub fn update_description(&mut self, project_id: u64, description: &str) -> Result<(), String> {
+        match self.projects.get_mut(&project_id) {
+            None => Err("Project does not exist".to_string()),
+            Some(project) => project.update_description(description),
+        }
+    }
+
+
+
+    pub fn add_project_canister(&mut self,project_id:u64, canister: Principal) -> Result<(), String> {
+        match self.projects.get_mut(&project_id) {
+            None => Err("Project does not exist".to_string()),
+            Some(project) => project.add_canister(canister),
+        }
+    }
+
+    pub fn remove_project_canister(&mut self,project_id:u64, canister: Principal) -> Result<(), String> {
+        match self.projects.get_mut(&project_id) {
+            None => Err("Project does not exist".to_string()),
+            Some(project) => project.remove_canister(canister),
+        }
+    }
+
+
+
+
+    pub async fn get_canister_status(
+        &self,
+        project_id: u64,
+        canister: Principal,
+    ) -> Result<CanisterStatusResponse, String> {
+        match self.projects.get(&project_id) {
+            None => Err("Project does not exist".to_string()),
+            Some(project) => project.get_canister_status(canister).await,
+        }
+    }
+
+    pub async fn set_canister_controller(
+        &self,
+        project_id: u64,
+        canister: Principal,
+    ) -> Result<(), String> {
+        match self.projects.get(&project_id) {
+            None => Err("Project does not exist".to_string()),
+            Some(project) => project.set_canister_controller(canister).await,
+        }
+    }
 }

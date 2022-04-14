@@ -5,15 +5,15 @@ use crate::authority::Authority;
 #[derive(CandidType, Debug, Deserialize,Clone)]
 pub struct Member{
     pub name:String,
-    pub profile:Authority,
+    pub authority:Authority,
     pub identity:Principal,
 }
 
 impl Member{
-    pub fn new(name:String,profile:Authority,identity:Principal) -> Self{
+    pub fn new(name:String,authority:Authority,identity:Principal) -> Self{
         Self{
             name:name,
-            profile:profile,
+            authority:authority,
             identity:identity,
         }
     }

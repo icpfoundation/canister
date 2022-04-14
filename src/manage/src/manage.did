@@ -7,7 +7,7 @@ type Authority = variant {
 
 type Member = record {
     name:text;
-    profile:Authority;
+    authority:Authority;
     identity:principal;
 };
 
@@ -21,6 +21,7 @@ type Project = record {
     visibility: Profile;
     in_group: nat64;
     members:vec record { principal; Member; };
+    canisters:vec principal;
 };
 
 type Group = record {
