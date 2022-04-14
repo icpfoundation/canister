@@ -157,6 +157,81 @@ impl User {
         }
     }
 
+    pub fn add_project_canister(
+        identity: Principal,
+        group_id: u64,
+        project_id: u64,
+        canister: Principal,
+    ) -> Result<(), String> {
+        match crate::UserStorage.write().unwrap().get_mut(&identity) {
+            None => return Err("user does not exist".to_string()),
+            Some(user) => match user.groups.get_mut(&group_id) {
+                None => return Err("group does not exist".to_string()),
+                Some(group) => group.add_project_canister(project_id,canister),
+            },
+        }
+    }
+
+    pub fn remove_project_canister(
+        identity: Principal,
+        group_id: u64,
+        project_id: u64,
+        canister: Principal,
+    ) -> Result<(), String> {
+        match crate::UserStorage.write().unwrap().get_mut(&identity) {
+            None => return Err("user does not exist".to_string()),
+            Some(user) => match user.groups.get_mut(&group_id) {
+                None => return Err("group does not exist".to_string()),
+                Some(group) => group.remove_project_canister(project_id,canister),
+            },
+        }
+    }
+
+    pub fn update_project_git_repo_url(
+        identity: Principal,
+        group_id: u64,
+        project_id: u64,
+        git: &str,
+    ) -> Result<(), String> {
+        match crate::UserStorage.write().unwrap().get_mut(&identity) {
+            None => return Err("user does not exist".to_string()),
+            Some(user) => match user.groups.get_mut(&group_id) {
+                None => return Err("group does not exist".to_string()),
+                Some(group) => group.update_git_repo_url(project_id,git),
+            },
+        }
+    }
+
+    pub fn update_project_visibility(
+        identity: Principal,
+        group_id: u64,
+        project_id: u64,
+        visibility: Profile,
+    ) -> Result<(), String> {
+        match crate::UserStorage.write().unwrap().get_mut(&identity) {
+            None => return Err("user does not exist".to_string()),
+            Some(user) => match user.groups.get_mut(&group_id) {
+                None => return Err("group does not exist".to_string()),
+                Some(group) => group.update_visibility(project_id,visibility),
+            },
+        }
+    }
+
+    pub fn update_project_description(
+        identity: Principal,
+        group_id: u64,
+        project_id: u64,
+        description: &str,
+    ) -> Result<(), String> {
+        match crate::UserStorage.write().unwrap().get_mut(&identity) {
+            None => return Err("user does not exist".to_string()),
+            Some(user) => match user.groups.get_mut(&group_id) {
+                None => return Err("group does not exist".to_string()),
+                Some(group) => group.update_description(project_id,description),
+            },
+        }
+    }
+
     pub fn storage(self) -> Result<(), String> {
         if crate::UserStorage
             .read()
