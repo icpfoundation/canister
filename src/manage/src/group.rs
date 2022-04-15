@@ -88,6 +88,7 @@ impl Group {
         self.members.remove(&member);
         Ok(())
     }
+
     pub fn storage(self) -> Result<(), String> {
         let id = self.id;
         if !crate::GroupStorage.read().unwrap().contains_key(&id) {
@@ -152,24 +153,45 @@ impl Group {
         }
     }
 
+    pub fn add_project_member(&mut self, project_id: u64, member: Member) -> Result<(), String> {
+        match self.projects.get_mut(&project_id) {
+            None => Err("Project does not exist".to_string()),
+            Some(project) => project.add_member(member),
+        }
+    }
 
+    pub fn remove_project_member(
+        &mut self,
+        project_id: u64,
+        member: Principal,
+    ) -> Result<(), String> {
+        match self.projects.get_mut(&project_id) {
+            None => Err("Project does not exist".to_string()),
+            Some(project) => project.remove_member(member),
+        }
+    }
 
-    pub fn add_project_canister(&mut self,project_id:u64, canister: Principal) -> Result<(), String> {
+    pub fn add_project_canister(
+        &mut self,
+        project_id: u64,
+        canister: Principal,
+    ) -> Result<(), String> {
         match self.projects.get_mut(&project_id) {
             None => Err("Project does not exist".to_string()),
             Some(project) => project.add_canister(canister),
         }
     }
 
-    pub fn remove_project_canister(&mut self,project_id:u64, canister: Principal) -> Result<(), String> {
+    pub fn remove_project_canister(
+        &mut self,
+        project_id: u64,
+        canister: Principal,
+    ) -> Result<(), String> {
         match self.projects.get_mut(&project_id) {
             None => Err("Project does not exist".to_string()),
             Some(project) => project.remove_canister(canister),
         }
     }
-
-
-
 
     pub async fn get_canister_status(
         &self,
@@ -190,6 +212,39 @@ impl Group {
         match self.projects.get(&project_id) {
             None => Err("Project does not exist".to_string()),
             Some(project) => project.set_canister_controller(canister).await,
+        }
+    }
+
+    pub async fn stop_project_canister(
+        &self,
+        project_id: u64,
+        canister: Principal,
+    ) -> Result<(), String> {
+        match self.projects.get(&project_id) {
+            None => Err("Project does not exist".to_string()),
+            Some(project) => project.stop_canister(canister).await,
+        }
+    }
+
+    pub async fn start_project_canister(
+        &self,
+        project_id: u64,
+        canister: Principal,
+    ) -> Result<(), String> {
+        match self.projects.get(&project_id) {
+            None => Err("Project does not exist".to_string()),
+            Some(project) => project.start_canister(canister).await,
+        }
+    }
+
+    pub async fn delete_project_canister(
+        &self,
+        project_id: u64,
+        canister: Principal,
+    ) -> Result<(), String> {
+        match self.projects.get(&project_id) {
+            None => Err("Project does not exist".to_string()),
+            Some(project) => project.delete_canister(canister).await,
         }
     }
 }

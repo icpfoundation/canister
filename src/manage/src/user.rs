@@ -1,5 +1,6 @@
 use crate::authority::Authority;
 use crate::group::Group;
+use crate::manage::CanisterStatusResponse;
 use crate::member::Member;
 use crate::operation::Operation;
 use crate::project::Project;
@@ -157,6 +158,36 @@ impl User {
         }
     }
 
+    pub fn add_project_member(
+        identity: Principal,
+        group_id: u64,
+        project_id: u64,
+        member: Member,
+    ) -> Result<(), String> {
+        match crate::UserStorage.write().unwrap().get_mut(&identity) {
+            None => return Err("user does not exist".to_string()),
+            Some(user) => match user.groups.get_mut(&group_id) {
+                None => return Err("group does not exist".to_string()),
+                Some(group) => group.add_project_member(project_id, member),
+            },
+        }
+    }
+
+    pub fn remove_project_member(
+        identity: Principal,
+        group_id: u64,
+        project_id: u64,
+        member: Principal,
+    ) -> Result<(), String> {
+        match crate::UserStorage.write().unwrap().get_mut(&identity) {
+            None => return Err("user does not exist".to_string()),
+            Some(user) => match user.groups.get_mut(&group_id) {
+                None => return Err("group does not exist".to_string()),
+                Some(group) => group.remove_project_member(project_id, member),
+            },
+        }
+    }
+
     pub fn add_project_canister(
         identity: Principal,
         group_id: u64,
@@ -167,7 +198,7 @@ impl User {
             None => return Err("user does not exist".to_string()),
             Some(user) => match user.groups.get_mut(&group_id) {
                 None => return Err("group does not exist".to_string()),
-                Some(group) => group.add_project_canister(project_id,canister),
+                Some(group) => group.add_project_canister(project_id, canister),
             },
         }
     }
@@ -182,7 +213,7 @@ impl User {
             None => return Err("user does not exist".to_string()),
             Some(user) => match user.groups.get_mut(&group_id) {
                 None => return Err("group does not exist".to_string()),
-                Some(group) => group.remove_project_canister(project_id,canister),
+                Some(group) => group.remove_project_canister(project_id, canister),
             },
         }
     }
@@ -197,7 +228,7 @@ impl User {
             None => return Err("user does not exist".to_string()),
             Some(user) => match user.groups.get_mut(&group_id) {
                 None => return Err("group does not exist".to_string()),
-                Some(group) => group.update_git_repo_url(project_id,git),
+                Some(group) => group.update_git_repo_url(project_id, git),
             },
         }
     }
@@ -212,7 +243,7 @@ impl User {
             None => return Err("user does not exist".to_string()),
             Some(user) => match user.groups.get_mut(&group_id) {
                 None => return Err("group does not exist".to_string()),
-                Some(group) => group.update_visibility(project_id,visibility),
+                Some(group) => group.update_visibility(project_id, visibility),
             },
         }
     }
@@ -227,7 +258,22 @@ impl User {
             None => return Err("user does not exist".to_string()),
             Some(user) => match user.groups.get_mut(&group_id) {
                 None => return Err("group does not exist".to_string()),
-                Some(group) => group.update_description(project_id,description),
+                Some(group) => group.update_description(project_id, description),
+            },
+        }
+    }
+
+    pub async fn get_canister_status(
+        identity: Principal,
+        group_id: u64,
+        project_id: u64,
+        canister: Principal,
+    ) -> Result<CanisterStatusResponse, String> {
+        match crate::UserStorage.read().unwrap().get(&identity) {
+            None => return Err("user does not exist".to_string()),
+            Some(user) => match user.groups.get(&group_id) {
+                None => return Err("group does not exist".to_string()),
+                Some(group) => group.get_canister_status(project_id, canister).await,
             },
         }
     }
@@ -245,5 +291,50 @@ impl User {
             .unwrap()
             .insert(self.identity, self);
         Ok(())
+    }
+
+    pub async fn stop_project_canister(
+        identity: Principal,
+        group_id: u64,
+        project_id: u64,
+        canister: Principal,
+    ) -> Result<(), String> {
+        match crate::UserStorage.read().unwrap().get(&identity) {
+            None => return Err("user does not exist".to_string()),
+            Some(user) => match user.groups.get(&group_id) {
+                None => return Err("group does not exist".to_string()),
+                Some(group) => group.stop_project_canister(project_id, canister).await,
+            },
+        }
+    }
+
+    pub async fn start_project_canister(
+        identity: Principal,
+        group_id: u64,
+        project_id: u64,
+        canister: Principal,
+    ) -> Result<(), String> {
+        match crate::UserStorage.read().unwrap().get(&identity) {
+            None => return Err("user does not exist".to_string()),
+            Some(user) => match user.groups.get(&group_id) {
+                None => return Err("group does not exist".to_string()),
+                Some(group) => group.start_project_canister(project_id, canister).await,
+            },
+        }
+    }
+
+    pub async fn delete_project_canister(
+        identity: Principal,
+        group_id: u64,
+        project_id: u64,
+        canister: Principal,
+    ) -> Result<(), String> {
+        match crate::UserStorage.read().unwrap().get(&identity) {
+            None => return Err("user does not exist".to_string()),
+            Some(user) => match user.groups.get(&group_id) {
+                None => return Err("group does not exist".to_string()),
+                Some(group) => group.delete_project_canister(project_id, canister).await,
+            },
+        }
     }
 }

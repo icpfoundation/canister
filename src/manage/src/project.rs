@@ -176,4 +176,28 @@ impl Project {
         }
         return Err("canisters do not exist in the project".to_string());
     }
+
+    pub async fn stop_canister(&self, canister: Principal) -> Result<(), String> {
+        if self.canisters.contains(&canister) {
+            self.identity_check(Authority::Operational)?;
+            return ManageCanister::stop_canister(canister).await;
+        }
+        return Err("canisters do not exist in the project".to_string());
+    }
+
+    pub async fn start_canister(&self, canister: Principal) -> Result<(), String> {
+        if self.canisters.contains(&canister) {
+            self.identity_check(Authority::Operational)?;
+            return ManageCanister::start_canister(canister).await;
+        }
+        return Err("canisters do not exist in the project".to_string());
+    }
+
+    pub async fn delete_canister(&self, canister: Principal) -> Result<(), String> {
+        if self.canisters.contains(&canister) {
+            self.identity_check(Authority::Operational)?;
+            return ManageCanister::delete_canister(canister).await;
+        }
+        return Err("canisters do not exist in the project".to_string());
+    }
 }

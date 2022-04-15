@@ -91,7 +91,7 @@ type OptGroupRes = variant{
 service :{
     get_group:(nat64) -> (opt Group) query;
     mock_test_set_controllers:(principal) ->(Result);
-    get_canister_status:(principal)->(CanisterStatusRes);
+    get_canister_status:(principal,nat64,nat64,principal)->(CanisterStatusRes);
     get_user_info:(principal) -> (UserRes)query;
     add_user:(text,Profile) -> (OptGroupRes);
     add_group:(Group) -> (OptGroupRes);
@@ -105,4 +105,9 @@ service :{
     update_project_git_repo_url:(principal,nat64,nat64,text) -> (OptGroupRes);
     update_project_visibility:(principal,nat64,nat64,Profile) -> (OptGroupRes);
     update_project_description:(principal,nat64,nat64,text) -> (OptGroupRes);
+    add_project_member:(principal,nat64,nat64,Member)-> (OptGroupRes);
+    remove_project_member:(principal,nat64,nat64,principal)-> (OptGroupRes);
+    start_project_canister:(principal,nat64,nat64,principal)-> (OptGroupRes);
+    stop_project_canister:(principal,nat64,nat64,principal)-> (OptGroupRes);
+    delete_project_canister:(principal,nat64,nat64,principal)-> (OptGroupRes);
 }

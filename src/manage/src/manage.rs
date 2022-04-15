@@ -65,9 +65,77 @@ impl ManageCanister {
         .await
         {
             Ok((status,)) => return Ok(status),
-            Err(err) => {
-                let err = format!("{:?}", err);
-                return Err(err);
+            Err((code, msg)) => {
+                return Err(format!(
+                    "get_canister_status faile: {}: {}",
+                    code as u8, msg
+                ));
+            }
+        }
+    }
+
+    pub async fn stop_canister(canister: Principal) -> Result<(), String> {
+        let canister_id = CanisterIdRecord {
+            canister_id: canister,
+        };
+
+        match call(
+            Principal::management_canister(),
+            "stop_canister",
+            (canister_id,),
+        )
+        .await
+        {
+            Ok(()) => return Ok(()),
+            Err((code, msg)) => {
+                return Err(format!(
+                    "get_canister_status faile: {}: {}",
+                    code as u8, msg
+                ));
+            }
+        }
+    }
+
+    pub async fn start_canister(canister: Principal) -> Result<(), String> {
+        let canister_id = CanisterIdRecord {
+            canister_id: canister,
+        };
+
+        match call(
+            Principal::management_canister(),
+            "start_canister",
+            (canister_id,),
+        )
+        .await
+        {
+            Ok(()) => return Ok(()),
+            Err((code, msg)) => {
+                return Err(format!(
+                    "get_canister_status faile: {}: {}",
+                    code as u8, msg
+                ));
+            }
+        }
+    }
+
+    pub async fn delete_canister(canister: Principal) -> Result<(), String> {
+        let canister_id = CanisterIdRecord {
+            canister_id: canister,
+        };
+
+        match call(
+            Principal::management_canister(),
+            "delete_canister",
+            (canister_id,),
+        )
+        .await
+        {
+            Ok(()) => return Ok(()),
+            Err((code, msg)) => {
+                return Err(format!(
+                    "get_canister_status faile: {}: {}",
+                    code as u8, msg
+                ));
             }
         }
     }

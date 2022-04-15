@@ -27,7 +27,7 @@ projectInGroup := $(groupId)
 projectMembers := record {0 = $(user); 1 = record {name = $(projectMemberName);authority = $(projectMemberAuthority);identity = $(projectMemberIdentity)}}
 projectCanisters := vec {}
 
-projectCanister := principal "ryjl3-tyaaa-aaaaa-aaaba-cai"
+projectCanister := principal "rrkah-fqaaa-aaaaa-aaaaq-cai"
 
 
 
@@ -42,8 +42,8 @@ deploy:
 set_controller:
 	dfx canister --wallet $$(dfx identity get-wallet) update-settings --all --controller  rrkah-fqaaa-aaaaa-aaaaq-cai
 
-get_status:
-	dfx canister call manage get_canister_status '(principal "rrkah-fqaaa-aaaaa-aaaaq-cai")'
+get_canister_status:
+	dfx canister call manage get_canister_status '($(user),$(groupId),$(projectId),$(projectCanister))'
 
 add_user:
 	dfx canister call manage add_user '("test1",variant { Public})'
@@ -75,6 +75,22 @@ add_project:
 	in_group = $(projectInGroup); \
 	members = vec {$(projectMembers)}; \
 	canisters = $(projectCanisters)})'
+
+
+add_project_member:
+	dfx canister call manage add_project_member '($(user),\
+	$(projectId), \
+	$(groupId), \
+	record {name=$(projectMemberName); \
+	authority = $(projectMemberAuthority); \
+	identity = $(projectMemberIdentity);})'
+
+remove_project_member:
+	dfx canister call manage remove_project_member '($(user),\
+	$(projectId), \
+	$(groupId), \
+	$(projectMemberIdentity))'
+
 
 add_project_canister:
 	dfx canister call manage add_project_canister '($(user),$(projectId),$(groupId),$(projectCanister))'
@@ -113,9 +129,13 @@ test:
 	&& make add_group \
 	&& make add_project \
 	&& make add_project_canister \
+	&& make add_project_member \
 	&& make update_project_git_repo_url \
 	&& make update_project_visibility \
 	&& make update_project_description \
+	&& make set_controller \
+	&& make get_canister_status \
+	&& make remove_project_member \
 	&& make add_group_member \
-	&& make remove_group_member \
+	&& make remove_group_member
 
