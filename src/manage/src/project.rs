@@ -77,6 +77,7 @@ impl Project {
     }
 
     pub fn add_member(&mut self, member: Member) -> Result<(), String> {
+        self.identity_check(Authority::Write)?;
         if let Err(err) = self.identity_check(Authority::Write) {
             return Err(err);
         }
@@ -87,6 +88,7 @@ impl Project {
     }
 
     pub fn remove_member(&mut self, member: Principal) -> Result<(), String> {
+        self.identity_check(Authority::Write)?;
         if let Err(err) = self.identity_check(Authority::Write) {
             return Err(err);
         }
@@ -113,6 +115,7 @@ impl Project {
     }
 
     pub fn add_canister(&mut self, canister: Principal) -> Result<(), String> {
+        self.identity_check(Authority::Write)?;
         if self.canisters.contains(&canister) {
             return Err("canisters already exist".to_string());
         }
@@ -121,6 +124,7 @@ impl Project {
     }
 
     pub fn remove_canister(&mut self, canister: Principal) -> Result<(), String> {
+        self.identity_check(Authority::Write)?;
         if self.canisters.contains(&canister) {
             return Err("canisters do not exist".to_string());
         }

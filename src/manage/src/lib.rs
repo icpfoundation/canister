@@ -90,6 +90,43 @@ fn remove_group_member(group_id:u64,member:Principal) -> Result<(),String>{
     User::remove_group_member(ic_cdk::caller(),group_id, member)
 }
 
+#[update]
+fn add_project_canister(user:Principal, group_id:u64,project_id:u64,canister:Principal) -> Result<(),String>{
+    User::add_project_canister(user,group_id,project_id,canister)
+}
+
+#[update]
+fn remove_project_canister(user:Principal, group_id:u64,project_id:u64,canister:Principal) -> Result<(),String>{
+    User::remove_project_canister(user,group_id,project_id,canister)
+}
+
+#[update]
+pub fn update_project_git_repo_url(user: Principal,
+    group_id: u64,
+    project_id: u64,
+    git: String)->Result<(),String>{
+    User::update_project_git_repo_url(user,group_id,project_id,git.as_str())
+}
+
+#[update]
+pub fn update_project_visibility(
+    user: Principal,
+    group_id: u64,
+    project_id: u64,
+    visibility: Profile,
+) -> Result<(), String> {
+    User::update_project_visibility(user,group_id,project_id,visibility)
+}
+
+#[update]
+pub fn update_project_description(
+    user: Principal,
+    group_id: u64,
+    project_id: u64,
+    description: String,
+) -> Result<(), String> {
+    User::update_project_description(user,group_id,project_id,description.as_str())
+}
 
 #[update]
 async fn mock_test_set_controllers(canister_id: Principal) -> Result<(), String> {
