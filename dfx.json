@@ -5,6 +5,12 @@
       "candid": "src/manage/src/manage.did",
       "wasm": "target/wasm32-unknown-unknown/release/manage.wasm",
       "type": "custom"
+    },
+    "test_canister": {
+      "build": "./build.sh",
+      "candid": "src/test_canister/src/test_canister.did",
+      "wasm": "target/wasm32-unknown-unknown/release/test_canister.wasm",
+      "type": "custom"
     }
   },
   "defaults": {

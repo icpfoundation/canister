@@ -88,6 +88,12 @@ type OptGroupRes = variant{
     Err:text;
 };
 
+type InstallCodeMode = variant{
+    install:null;
+    reinstall:null;
+    upgrade:null;  
+};
+
 service :{
     get_group:(nat64) -> (opt Group) query;
     mock_test_set_controllers:(principal) ->(Result);
@@ -110,4 +116,5 @@ service :{
     start_project_canister:(principal,nat64,nat64,principal)-> (OptGroupRes);
     stop_project_canister:(principal,nat64,nat64,principal)-> (OptGroupRes);
     delete_project_canister:(principal,nat64,nat64,principal)-> (OptGroupRes);
+    install_code:(principal,nat64,nat64,principal,InstallCodeMode,blob,blob) -> (OptGroupRes);
 }

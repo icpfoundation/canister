@@ -13,7 +13,7 @@ use candid::CandidType;
 use group::Group;
 use ic_cdk::export::candid::{Deserialize, Nat};
 use ic_cdk::export::Principal;
-use manage::{CanisterSettings, CanisterStatusResponse, ManageCanister};
+use manage::{CanisterSettings, CanisterStatusResponse, InstallCodeMode, ManageCanister};
 use member::Member;
 use project::Project;
 use std::sync::RwLock;
@@ -190,6 +190,28 @@ pub async fn delete_project_canister(
     canister: Principal,
 ) -> Result<(), String> {
     User::delete_project_canister(user, group_id, project_id, canister).await
+}
+
+#[update]
+pub async fn install_code(
+    identity: Principal,
+    group_id: u64,
+    project_id: u64,
+    canister: Principal,
+    install_mod: InstallCodeMode,
+    wasm: Vec<u8>,
+    args: Vec<u8>,
+) -> Result<(), String> {
+    User::install_code(
+        identity,
+        group_id,
+        project_id,
+        canister,
+        install_mod,
+        wasm,
+        args,
+    )
+    .await
 }
 
 #[update]

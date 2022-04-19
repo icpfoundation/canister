@@ -1,11 +1,12 @@
 user := principal "dzhx6-f63tz-aslp6-xxyzd-pknwt-lxpho-q2wsx-pvwwd-v3nq6-75ek5-rqe"
+dfxManageCanister := dfx canister call manage
 userName := "test1"
 
 groupId := 1
 createTime := 10000
 groupName := "test_group"
 groupDescription := "test group"
-visibility := variant {Private}
+visibility := variant {Public}
 projects := vec {}
 groupMemberName := "m1"
 groupMemberAuthority :=  variant {Write}
@@ -13,7 +14,7 @@ groupMemberIdentity := $(user)
 groupMembers := record{0 =  $(user);1 = record { name = $(groupMemberName);authority =$(groupMemberAuthority); identity = $(groupMemberIdentity)}}
 
 projectMemberName := "member1"
-projectMemberAuthority := variant {Write}
+projectMemberAuthority := variant {Operational}
 projectMemberIdentity := $(user)
 
 projectId := 1
@@ -27,10 +28,11 @@ projectInGroup := $(groupId)
 projectMembers := record {0 = $(user); 1 = record {name = $(projectMemberName);authority = $(projectMemberAuthority);identity = $(projectMemberIdentity)}}
 projectCanisters := vec {}
 
-projectCanister := principal "rrkah-fqaaa-aaaaa-aaaaq-cai"
+projectCanister := principal "ryjl3-tyaaa-aaaaa-aaaba-cai"
 
 
-
+installCodeMode := variant { reinstall }
+wasm := 
 
 .PHONY : restart deploy set_controller get_status add_user get_user_info add_group remove_group add_project add_group_member remove_group_member
 restart:
@@ -43,16 +45,16 @@ set_controller:
 	dfx canister --wallet $$(dfx identity get-wallet) update-settings --all --controller  rrkah-fqaaa-aaaaa-aaaaq-cai
 
 get_canister_status:
-	dfx canister call manage get_canister_status '($(user),$(groupId),$(projectId),$(projectCanister))'
+	$(dfxManageCanister) get_canister_status '($(user),$(groupId),$(projectId),$(projectCanister))'
 
 add_user:
-	dfx canister call manage add_user '("test1",variant { Public})'
+	$(dfxManageCanister) add_user '("test1",variant { Public})'
 
 get_user_info:
-	dfx canister call manage get_user_info '($(user))'
+	$(dfxManageCanister) get_user_info '($(user))'
 
 add_group:
-	dfx canister call manage add_group '(record {id = $(groupId); \
+	$(dfxManageCanister) add_group '(record {id = $(groupId); \
 	create_time=$(createTime); \
 	name=$(groupName); \
 	description=$(groupDescription); \
@@ -61,10 +63,10 @@ add_group:
 	members = vec {$(groupMembers)}})'
 
 remove_group:
-	dfx canister call manage remove_group '($(groupId))'
+	$(dfxManageCanister) remove_group '($(groupId))'
 
 add_project:
-	dfx canister call manage add_project '($(groupId),\
+	$(dfxManageCanister) add_project '($(groupId),\
 	record {id=$(projectId); \
 	name=$(projectName); \
 	description=$(projectDescription); \
@@ -78,64 +80,72 @@ add_project:
 
 
 add_project_member:
-	dfx canister call manage add_project_member '($(user),\
-	$(projectId), \
+	$(dfxManageCanister) add_project_member '($(user),\
 	$(groupId), \
+	$(projectId), \
 	record {name=$(projectMemberName); \
 	authority = $(projectMemberAuthority); \
 	identity = $(projectMemberIdentity);})'
 
 remove_project_member:
-	dfx canister call manage remove_project_member '($(user),\
-	$(projectId), \
+	$(dfxManageCanister) remove_project_member '($(user),\
 	$(groupId), \
+	$(projectId), \
 	$(projectMemberIdentity))'
 
 
 add_project_canister:
-	dfx canister call manage add_project_canister '($(user),$(projectId),$(groupId),$(projectCanister))'
+	$(dfxManageCanister) add_project_canister '($(user),$(groupId),$(projectId),$(projectCanister))'
 
 remove_project_canister:
-	dfx canister call manage remove_project_canister '($(user),$(projectId),$(groupId),$(projectCanister))'
+	$(dfxManageCanister) remove_project_canister '($(user),$(groupId),$(projectId),$(projectCanister))'
 
 update_project_git_repo_url:
-	dfx canister call manage update_project_git_repo_url  '($(user),$(projectId),$(groupId),"chaincloud.git")'
+	$(dfxManageCanister) update_project_git_repo_url  '($(user),$(groupId),$(projectId),"chaincloud.git")'
 
 update_project_visibility:
-	dfx canister call manage update_project_visibility  '($(user),$(projectId),$(groupId),variant {Public})'
+	$(dfxManageCanister) update_project_visibility  '($(user),$(groupId),$(projectId),variant {Public})'
 
 update_project_description:
-	dfx canister call manage update_project_description  '($(user),$(projectId),$(groupId),"canister management platform")'
+	$(dfxManageCanister) update_project_description  '($(user),$(groupId),$(projectId),"canister management platform")'
 
 remove_project:
-	dfx canister call manage remove_project '($(groupId),$(projectId))'
+	$(dfxManageCanister) remove_project '($(groupId),$(projectId))'
 
 add_group_member:
-	dfx canister call manage add_group_member '($(groupId), \
+	$(dfxManageCanister) add_group_member '($(groupId), \
 	record {name=$(projectMemberName); \
 	authority = $(projectMemberAuthority); \
 	identity = $(projectMemberIdentity);})'
 
 remove_group_member:
-	dfx canister call manage remove_group_member '($(groupId),$(projectMemberIdentity))'
+	$(dfxManageCanister) remove_group_member '($(groupId),$(projectMemberIdentity))'
 
+stop_project_canister:
+	$(dfxManageCanister) stop_project_canister '($(user),$(groupId),$(projectId),$(projectCanister))'
 
+start_project_canister:
+	$(dfxManageCanister) start_project_canister '($(user),$(groupId),$(projectId),$(projectCanister))'
 
+install_code:
+	$(dfxManageCanister) install_code '($(user),$(groupId),$(projectId),$(projectCanister))'
 
 test:
 	make restart \
 	&& make deploy \
+	&& make set_controller \
 	&& make add_user \
 	&& make add_group \
 	&& make add_project \
 	&& make add_project_canister \
 	&& make add_project_member \
-	&& make update_project_git_repo_url \
-	&& make update_project_visibility \
-	&& make update_project_description \
-	&& make set_controller \
-	&& make get_canister_status \
-	&& make remove_project_member \
-	&& make add_group_member \
-	&& make remove_group_member
+	&& make stop_project_canister \
+	&& make start_project_canister \
+	# && make update_project_git_repo_url \
+	# && make update_project_visibility \
+	# && make update_project_description \
+	# && make get_canister_status \
+	# && make remove_project_member \
+	# && make add_group_member \
+	# && make remove_group_member
 

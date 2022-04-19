@@ -1,6 +1,6 @@
 use crate::authority::Authority;
 use crate::group::Group;
-use crate::manage::CanisterStatusResponse;
+use crate::manage::{CanisterStatusResponse, InstallCodeMode};
 use crate::member::Member;
 use crate::operation::Operation;
 use crate::project::Project;
@@ -334,6 +334,28 @@ impl User {
             Some(user) => match user.groups.get(&group_id) {
                 None => return Err("group does not exist".to_string()),
                 Some(group) => group.delete_project_canister(project_id, canister).await,
+            },
+        }
+    }
+
+    pub async fn install_code(
+        identity: Principal,
+        group_id: u64,
+        project_id: u64,
+        canister: Principal,
+        install_mod: InstallCodeMode,
+        wasm: Vec<u8>,
+        args: Vec<u8>,
+    ) -> Result<(), String> {
+        match crate::UserStorage.read().unwrap().get(&identity) {
+            None => return Err("user does not exist".to_string()),
+            Some(user) => match user.groups.get(&group_id) {
+                None => return Err("group does not exist".to_string()),
+                Some(group) => {
+                    group
+                        .install_code(project_id, canister, install_mod, wasm, args)
+                        .await
+                }
             },
         }
     }

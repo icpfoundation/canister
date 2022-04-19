@@ -1,5 +1,5 @@
 use crate::authority::Authority;
-use crate::manage::{CanisterSettings, CanisterStatusResponse, ManageCanister};
+use crate::manage::{CanisterSettings, CanisterStatusResponse, InstallCodeMode, ManageCanister};
 use crate::member::Member;
 use crate::operation::Operation;
 use crate::project::Project;
@@ -221,7 +221,7 @@ impl Group {
         canister: Principal,
     ) -> Result<(), String> {
         match self.projects.get(&project_id) {
-            None => Err("Project does not exist".to_string()),
+            None => Err("Project does not exist....".to_string()),
             Some(project) => project.stop_canister(canister).await,
         }
     }
@@ -245,6 +245,23 @@ impl Group {
         match self.projects.get(&project_id) {
             None => Err("Project does not exist".to_string()),
             Some(project) => project.delete_canister(canister).await,
+        }
+    }
+    pub async fn install_code(
+        &self,
+        project_id: u64,
+        canister: Principal,
+        install_mod: InstallCodeMode,
+        wasm: Vec<u8>,
+        args: Vec<u8>,
+    ) -> Result<(), String> {
+        match self.projects.get(&project_id) {
+            None => Err("Project does not exist".to_string()),
+            Some(project) => {
+                project
+                    .install_code(canister, install_mod, wasm, args)
+                    .await
+            }
         }
     }
 }

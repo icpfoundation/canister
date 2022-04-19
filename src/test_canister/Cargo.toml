@@ -1,0 +1,15 @@
+[package]
+name = "test_canister"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+ic-cdk = "0.5.0" 
+ic-cdk-macros = "0.5.0" 
+candid = "0.7.14" 
+pkg-config = "0.3.25"
+lmdb = {git = "https://github.com/danburkert/lmdb-rs"}
+[lib]
+crate-type = ["cdylib"]

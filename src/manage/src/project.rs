@@ -1,5 +1,5 @@
 use crate::authority::Authority;
-use crate::manage::{CanisterSettings, CanisterStatusResponse, ManageCanister};
+use crate::manage::{CanisterSettings, CanisterStatusResponse, InstallCodeMode, ManageCanister};
 use crate::member::Member;
 use crate::operation::Operation;
 use crate::types::Profile;
@@ -59,8 +59,8 @@ impl Project {
                 return Err("not in the group member list".to_string());
             }
             Some(member) => {
-                if !Authority::authority_check(member.authority.clone(), opt) {
-                    return Err("project does not exist".to_string());
+                if !Authority::authority_check(member.authority.clone(), opt.clone()) {
+                    return Err(format!("project permission verification failed: user permissions: {:?},opt permissions: {:?}",member.authority.clone(),opt));
                 }
                 Ok(())
             }
@@ -77,21 +77,14 @@ impl Project {
     }
 
     pub fn add_member(&mut self, member: Member) -> Result<(), String> {
-        self.identity_check(Authority::Write)?;
-        if let Err(err) = self.identity_check(Authority::Write) {
-            return Err(err);
-        }
-
+        self.identity_check(Authority::Operational)?;
         self.members.insert(member.identity, member);
 
         Ok(())
     }
 
     pub fn remove_member(&mut self, member: Principal) -> Result<(), String> {
-        self.identity_check(Authority::Write)?;
-        if let Err(err) = self.identity_check(Authority::Write) {
-            return Err(err);
-        }
+        self.identity_check(Authority::Operational)?;
         self.members.remove(&member);
         Ok(())
     }
@@ -115,7 +108,7 @@ impl Project {
     }
 
     pub fn add_canister(&mut self, canister: Principal) -> Result<(), String> {
-        self.identity_check(Authority::Write)?;
+        self.identity_check(Authority::Operational)?;
         if self.canisters.contains(&canister) {
             return Err("canisters already exist".to_string());
         }
@@ -124,7 +117,7 @@ impl Project {
     }
 
     pub fn remove_canister(&mut self, canister: Principal) -> Result<(), String> {
-        self.identity_check(Authority::Write)?;
+        self.identity_check(Authority::Operational)?;
         if self.canisters.contains(&canister) {
             return Err("canisters do not exist".to_string());
         }
@@ -137,7 +130,7 @@ impl Project {
         member: Principal,
         authority: Authority,
     ) -> Result<(), String> {
-        self.identity_check(Authority::Write)?;
+        self.identity_check(Authority::Operational)?;
         match self.members.get_mut(&member) {
             None => Err("member is not in the project".to_string()),
             Some(member) => {
@@ -197,6 +190,20 @@ impl Project {
         if self.canisters.contains(&canister) {
             self.identity_check(Authority::Operational)?;
             return ManageCanister::delete_canister(canister).await;
+        }
+        return Err("canisters do not exist in the project".to_string());
+    }
+
+    pub async fn install_code(
+        &self,
+        canister: Principal,
+        install_mod: InstallCodeMode,
+        wasm: Vec<u8>,
+        args: Vec<u8>,
+    ) -> Result<(), String> {
+        if self.canisters.contains(&canister) {
+            self.identity_check(Authority::Operational)?;
+            return ManageCanister::install_code(canister, install_mod, wasm, args).await;
         }
         return Err("canisters do not exist in the project".to_string());
     }

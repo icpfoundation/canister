@@ -18,6 +18,16 @@ pub enum CanisterStatus {
     Stopped,
 }
 
+#[derive(CandidType, Debug, Deserialize, Clone)]
+pub enum InstallCodeMode {
+    #[serde(rename = "install")]
+    Install,
+    #[serde(rename = "reinstall")]
+    Reinstall,
+    #[serde(rename = "upgrade")]
+    Upgrade,
+}
+
 #[derive(CandidType, Debug, Deserialize)]
 pub struct CanisterStatusResponse {
     pub status: CanisterStatus,
@@ -127,6 +137,33 @@ impl ManageCanister {
             Principal::management_canister(),
             "delete_canister",
             (canister_id,),
+        )
+        .await
+        {
+            Ok(()) => return Ok(()),
+            Err((code, msg)) => {
+                return Err(format!(
+                    "get_canister_status faile: {}: {}",
+                    code as u8, msg
+                ));
+            }
+        }
+    }
+
+    pub async fn install_code(
+        canister: Principal,
+        install_mod: InstallCodeMode,
+        wasm: Vec<u8>,
+        args: Vec<u8>,
+    ) -> Result<(), String> {
+        let canister_id = CanisterIdRecord {
+            canister_id: canister,
+        };
+
+        match call(
+            Principal::management_canister(),
+            "install_code",
+            (install_mod, canister_id, wasm, args),
         )
         .await
         {
