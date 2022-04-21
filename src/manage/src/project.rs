@@ -1,7 +1,6 @@
 use crate::authority::Authority;
 use crate::manage::{CanisterSettings, CanisterStatusResponse, InstallCodeMode, ManageCanister};
 use crate::member::Member;
-use crate::operation::Operation;
 use crate::types::Profile;
 use ic_cdk::api::caller;
 use ic_cdk::export::candid::Nat;

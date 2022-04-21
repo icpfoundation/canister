@@ -71,11 +71,19 @@ type Profile = variant{
     Private:null;
 };
 
+
+type RelationProject = record {
+    group_id: nat64;
+    project_id: nat64;
+};
+
+
 type User = record {
      user_name: text;
      profile: Profile;
      identity: principal;
-     groups: vec record {nat64; Group };
+     groups: vec record {nat64; Group; };
+     relation_project: vec record {principal; vec RelationProject;};
 };
 
 type UserRes = variant{
@@ -95,8 +103,6 @@ type InstallCodeMode = variant{
 };
 
 service :{
-    get_group:(nat64) -> (opt Group) query;
-    mock_test_set_controllers:(principal) ->(Result);
     get_canister_status:(principal,nat64,nat64,principal)->(CanisterStatusRes);
     get_user_info:(principal) -> (UserRes)query;
     add_user:(text,Profile) -> (OptGroupRes);

@@ -1,7 +1,6 @@
 use crate::authority::Authority;
 use crate::manage::{CanisterSettings, CanisterStatusResponse, InstallCodeMode, ManageCanister};
 use crate::member::Member;
-use crate::operation::Operation;
 use crate::project::Project;
 use crate::types::Profile;
 use candid::CandidType;

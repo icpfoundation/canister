@@ -33,14 +33,6 @@ lazy_static! {
 #[init]
 fn init() {}
 
-#[query]
-fn get_group(group_id: u64) -> Option<Group> {
-    match GroupStorage.read().unwrap().get(&group_id) {
-        None => return None,
-        Some(group) => return Some(group.clone()),
-    }
-}
-
 #[update]
 async fn get_canister_status(
     user: Principal,
@@ -214,19 +206,9 @@ pub async fn install_code(
     .await
 }
 
-#[update]
-async fn mock_test_set_controllers(canister_id: Principal) -> Result<(), String> {
-    let controllers: Option<Vec<Principal>> = Some(vec![ic_cdk::api::caller()]);
-    let compute_allocation: Nat = "0".parse().unwrap();
-    let memory_allocation: Nat = "0".parse().unwrap();
-    let freezing_threshold: Nat = "2_592_000".parse().unwrap();
-
-    let canister_settings = CanisterSettings::new(
-        controllers,
-        Some(compute_allocation),
-        Some(memory_allocation),
-        Some(freezing_threshold),
-    );
-    let mange_canister = ManageCanister::new(canister_id, canister_settings);
-    mange_canister.set_controller().await
+#[cfg(test)]
+mod operation_test {
+    use super::*;
+    #[test]
+    fn emit_test() {}
 }

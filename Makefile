@@ -139,13 +139,17 @@ test:
 	&& make add_project \
 	&& make add_project_canister \
 	&& make add_project_member \
-	&& make stop_project_canister \
-	&& make start_project_canister \
+	&& make get_user_info \
+	&& make remove_project_member \
+	&& make get_user_info \
+	# && make stop_project_canister \
+	# && make start_project_canister \
 	# && make update_project_git_repo_url \
 	# && make update_project_visibility \
 	# && make update_project_description \
 	# && make get_canister_status \
-	# && make remove_project_member \
+
 	# && make add_group_member \
-	# && make remove_group_member
+	# && make remove_group_member	\
+
 
