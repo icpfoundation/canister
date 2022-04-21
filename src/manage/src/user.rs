@@ -8,6 +8,8 @@ use ic_cdk::api::caller;
 use ic_cdk::export::candid::{CandidType, Deserialize};
 use ic_cdk::export::Principal;
 use std::collections::HashMap;
+#[macro_use]
+use crate::operation;
 
 #[derive(CandidType, Debug, Deserialize, Clone)]
 pub struct RelationProject {
@@ -40,6 +42,7 @@ pub struct User {
 
 impl User {
     pub fn new(user_name: String, profile: Profile, identity: Principal) -> Self {
+        log!("new user ", &ic_cdk::caller().to_string(), &user_name);
         Self {
             user_name: user_name,
             profile: profile,
@@ -89,7 +92,14 @@ impl User {
             None => return Err("user does not exist".to_string()),
             Some(user) => {
                 user.identity_check()?;
+                log!(
+                    "add_group ",
+                    &ic_cdk::caller().to_string(),
+                    &identity,
+                    &group
+                );
                 user.groups.insert(group.id, group);
+
                 Ok(())
             }
         }
@@ -101,6 +111,12 @@ impl User {
             Some(user) => {
                 user.identity_check()?;
                 user.groups.remove(&group_id);
+                log!(
+                    "remove remove_group",
+                    &ic_cdk::caller().to_string(),
+                    &identity,
+                    &group_id
+                );
                 Ok(())
             }
         }
@@ -159,7 +175,17 @@ impl User {
             None => return Err("user does not exist".to_string()),
             Some(user) => match user.groups.get_mut(&group_id) {
                 None => return Err("Group does not exist".to_string()),
-                Some(group) => group.update_member_authority(member, auth),
+                Some(group) => {
+                    group.update_member_authority(member.clone(), auth.clone())?;
+                    log!(
+                        "update_member_authority",
+                        &ic_cdk::caller().to_string(),
+                        group_id,
+                        &member.to_string(),
+                        &auth
+                    );
+                    Ok(())
+                }
             },
         }
     }
@@ -175,7 +201,8 @@ impl User {
                 Some(group) => {
                     members = project.members.keys().map(|x| x.clone()).collect();
                     project_id = project.id;
-                    group.add_project(project)?;
+                    group.add_project(project.clone())?;
+                    log!("add_project", &ic_cdk::caller().to_string(), &project);
                 }
             },
         };
@@ -204,6 +231,7 @@ impl User {
                         members = project.members.keys().map(|x| x.clone()).collect();
                     }
                     group.remove_project(project_id)?;
+                    log!("remove_project", &ic_cdk::caller().to_string(), &project_id);
                 }
             },
         };
@@ -227,7 +255,11 @@ impl User {
                 user.identity_check()?;
                 match user.groups.get_mut(&group_id) {
                     None => return Err("Group does not exist".to_string()),
-                    Some(group) => group.add_member(member),
+                    Some(group) => {
+                        group.add_member(member.clone())?;
+                        log!("add_group_member", &ic_cdk::caller().to_string(), &member);
+                        Ok(())
+                    }
                 }
             }
         }
@@ -244,7 +276,15 @@ impl User {
                 user.identity_check()?;
                 match user.groups.get_mut(&group_id) {
                     None => return Err("Group does not exist".to_string()),
-                    Some(group) => group.remove_member(member),
+                    Some(group) => {
+                        group.remove_member(member);
+                        log!(
+                            "remove_group_member",
+                            &ic_cdk::caller().to_string(),
+                            &member
+                        );
+                        Ok(())
+                    }
                 }
             }
         }
@@ -264,7 +304,15 @@ impl User {
                 None => return Err("group does not exist".to_string()),
                 Some(group) => {
                     iden = member.identity.clone();
-                    group.add_project_member(project_id, member)?;
+                    group.add_project_member(project_id, member.clone())?;
+                    log!(
+                        "add_project_member",
+                        &ic_cdk::caller().to_string(),
+                        &identity,
+                        &group_id,
+                        &project_id,
+                        &member
+                    );
                 }
             },
         };
@@ -287,7 +335,15 @@ impl User {
                 None => return Err("group does not exist".to_string()),
 
                 Some(group) => {
-                    group.remove_project_member(project_id, member.clone())?;
+                    group.remove_project_member(project_id, member)?;
+                    log!(
+                        "remove_project_member",
+                        &ic_cdk::caller().to_string(),
+                        &identity,
+                        &group_id,
+                        &project_id,
+                        &member
+                    );
                 }
             },
         };
@@ -307,7 +363,18 @@ impl User {
             None => return Err("user does not exist".to_string()),
             Some(user) => match user.groups.get_mut(&group_id) {
                 None => return Err("group does not exist".to_string()),
-                Some(group) => group.add_project_canister(project_id, canister),
+                Some(group) => {
+                    group.add_project_canister(project_id, canister)?;
+                    log!(
+                        "add_project_canister",
+                        &ic_cdk::caller().to_string(),
+                        &identity,
+                        &group_id,
+                        &project_id,
+                        &canister
+                    );
+                    Ok(())
+                }
             },
         }
     }
@@ -322,7 +389,18 @@ impl User {
             None => return Err("user does not exist".to_string()),
             Some(user) => match user.groups.get_mut(&group_id) {
                 None => return Err("group does not exist".to_string()),
-                Some(group) => group.remove_project_canister(project_id, canister),
+                Some(group) => {
+                    group.remove_project_canister(project_id, canister)?;
+                    log!(
+                        "remove_project_canister",
+                        &ic_cdk::caller().to_string(),
+                        &identity,
+                        &group_id,
+                        &project_id,
+                        &canister
+                    );
+                    Ok(())
+                }
             },
         }
     }
@@ -337,7 +415,18 @@ impl User {
             None => return Err("user does not exist".to_string()),
             Some(user) => match user.groups.get_mut(&group_id) {
                 None => return Err("group does not exist".to_string()),
-                Some(group) => group.update_git_repo_url(project_id, git),
+                Some(group) => {
+                    group.update_git_repo_url(project_id, git)?;
+                    log!(
+                        "update_project_git_repo_url",
+                        &ic_cdk::caller().to_string(),
+                        &identity,
+                        &group_id,
+                        &project_id,
+                        git
+                    );
+                    Ok(())
+                }
             },
         }
     }
@@ -352,7 +441,18 @@ impl User {
             None => return Err("user does not exist".to_string()),
             Some(user) => match user.groups.get_mut(&group_id) {
                 None => return Err("group does not exist".to_string()),
-                Some(group) => group.update_visibility(project_id, visibility),
+                Some(group) => {
+                    group.update_visibility(project_id, visibility.clone())?;
+                    log!(
+                        "update_project_visibility",
+                        &ic_cdk::caller().to_string(),
+                        &identity,
+                        &group_id,
+                        &project_id,
+                        &visibility
+                    );
+                    Ok(())
+                }
             },
         }
     }
@@ -367,7 +467,18 @@ impl User {
             None => return Err("user does not exist".to_string()),
             Some(user) => match user.groups.get_mut(&group_id) {
                 None => return Err("group does not exist".to_string()),
-                Some(group) => group.update_description(project_id, description),
+                Some(group) => {
+                    group.update_description(project_id, description)?;
+                    log!(
+                        "update_project_description",
+                        &ic_cdk::caller().to_string(),
+                        &identity,
+                        &group_id,
+                        &project_id,
+                        description
+                    );
+                    Ok(())
+                }
             },
         }
     }
@@ -412,7 +523,18 @@ impl User {
             None => return Err("user does not exist".to_string()),
             Some(user) => match user.groups.get(&group_id) {
                 None => return Err("group does not exist".to_string()),
-                Some(group) => group.stop_project_canister(project_id, canister).await,
+                Some(group) => {
+                    group.stop_project_canister(project_id, canister).await?;
+                    log!(
+                        "stop_project_canister",
+                        &ic_cdk::caller().to_string(),
+                        &identity,
+                        &group_id,
+                        &project_id,
+                        &canister
+                    );
+                    Ok(())
+                }
             },
         }
     }
@@ -427,7 +549,18 @@ impl User {
             None => return Err("user does not exist".to_string()),
             Some(user) => match user.groups.get(&group_id) {
                 None => return Err("group does not exist".to_string()),
-                Some(group) => group.start_project_canister(project_id, canister).await,
+                Some(group) => {
+                    group.start_project_canister(project_id, canister).await?;
+                    log!(
+                        "start_project_canister",
+                        &ic_cdk::caller().to_string(),
+                        &identity,
+                        &group_id,
+                        &project_id,
+                        &canister
+                    );
+                    Ok(())
+                }
             },
         }
     }
@@ -442,7 +575,18 @@ impl User {
             None => return Err("user does not exist".to_string()),
             Some(user) => match user.groups.get(&group_id) {
                 None => return Err("group does not exist".to_string()),
-                Some(group) => group.delete_project_canister(project_id, canister).await,
+                Some(group) => {
+                    group.delete_project_canister(project_id, canister).await?;
+                    log!(
+                        "delete_project_canister",
+                        &ic_cdk::caller().to_string(),
+                        &identity,
+                        &group_id,
+                        &project_id,
+                        &canister
+                    );
+                    Ok(())
+                }
             },
         }
     }

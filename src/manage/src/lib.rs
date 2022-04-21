@@ -4,6 +4,7 @@ mod authority;
 mod group;
 mod manage;
 mod member;
+#[macro_use]
 mod operation;
 mod project;
 mod types;
