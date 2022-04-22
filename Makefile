@@ -28,7 +28,7 @@ projectInGroup := $(groupId)
 projectMembers := record {0 = $(user); 1 = record {name = $(projectMemberName);authority = $(projectMemberAuthority);identity = $(projectMemberIdentity)}}
 projectCanisters := vec {}
 
-projectCanister := principal "ryjl3-tyaaa-aaaaa-aaaba-cai"
+projectCanister := principal "r7inp-6aaaa-aaaaa-aaabq-cai"
 
 
 installCodeMode := variant { reinstall }

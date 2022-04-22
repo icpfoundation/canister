@@ -2,5 +2,5 @@
 members = [
     "src/manage",
     "src/test_canister",
-
+    "src/canister_log",
 ]

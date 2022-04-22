@@ -42,7 +42,6 @@ pub struct User {
 
 impl User {
     pub fn new(user_name: String, profile: Profile, identity: Principal) -> Self {
-        log!("new user ", &ic_cdk::caller().to_string(), &user_name);
         Self {
             user_name: user_name,
             profile: profile,
@@ -87,7 +86,7 @@ impl User {
         }
     }
 
-    pub fn add_group(identity: Principal, group: Group) -> Result<(), String> {
+    pub async fn add_group(identity: Principal, group: Group) -> Result<(), String> {
         match crate::UserStorage.write().unwrap().get_mut(&identity) {
             None => return Err("user does not exist".to_string()),
             Some(user) => {
@@ -95,9 +94,10 @@ impl User {
                 log!(
                     "add_group ",
                     &ic_cdk::caller().to_string(),
-                    &identity,
+                    &identity.to_string(),
                     &group
-                );
+                )()
+                .await;
                 user.groups.insert(group.id, group);
 
                 Ok(())
@@ -105,7 +105,7 @@ impl User {
         }
     }
 
-    pub fn remove_group(identity: Principal, group_id: u64) -> Result<(), String> {
+    pub async fn remove_group(identity: Principal, group_id: u64) -> Result<(), String> {
         match crate::UserStorage.write().unwrap().get_mut(&identity) {
             None => return Err("user does not exist".to_string()),
             Some(user) => {
@@ -114,9 +114,10 @@ impl User {
                 log!(
                     "remove remove_group",
                     &ic_cdk::caller().to_string(),
-                    &identity,
+                    &identity.to_string(),
                     &group_id
-                );
+                )()
+                .await;
                 Ok(())
             }
         }
@@ -165,7 +166,7 @@ impl User {
         }
     }
 
-    pub fn update_member_authority(
+    pub async fn update_member_authority(
         identity: Principal,
         group_id: u64,
         member: Principal,
@@ -183,14 +184,19 @@ impl User {
                         group_id,
                         &member.to_string(),
                         &auth
-                    );
+                    )()
+                    .await;
                     Ok(())
                 }
             },
         }
     }
 
-    pub fn add_project(identity: Principal, group_id: u64, project: Project) -> Result<(), String> {
+    pub async fn add_project(
+        identity: Principal,
+        group_id: u64,
+        project: Project,
+    ) -> Result<(), String> {
         let mut user_storage = crate::UserStorage.write().unwrap();
         let mut members: Vec<Principal> = Vec::new();
         let project_id: u64;
@@ -202,7 +208,7 @@ impl User {
                     members = project.members.keys().map(|x| x.clone()).collect();
                     project_id = project.id;
                     group.add_project(project.clone())?;
-                    log!("add_project", &ic_cdk::caller().to_string(), &project);
+                    log!("add_project", &ic_cdk::caller().to_string(), &project)().await;
                 }
             },
         };
@@ -214,7 +220,7 @@ impl User {
         Ok(())
     }
 
-    pub fn remove_project(
+    pub async fn remove_project(
         identity: Principal,
         group_id: u64,
         project_id: u64,
@@ -231,7 +237,7 @@ impl User {
                         members = project.members.keys().map(|x| x.clone()).collect();
                     }
                     group.remove_project(project_id)?;
-                    log!("remove_project", &ic_cdk::caller().to_string(), &project_id);
+                    log!("remove_project", &ic_cdk::caller().to_string(), &project_id)().await;
                 }
             },
         };
@@ -244,7 +250,7 @@ impl User {
         Ok(())
     }
 
-    pub fn add_group_member(
+    pub async fn add_group_member(
         identity: Principal,
         group_id: u64,
         member: Member,
@@ -257,7 +263,7 @@ impl User {
                     None => return Err("Group does not exist".to_string()),
                     Some(group) => {
                         group.add_member(member.clone())?;
-                        log!("add_group_member", &ic_cdk::caller().to_string(), &member);
+                        log!("add_group_member", &ic_cdk::caller().to_string(), &member)().await;
                         Ok(())
                     }
                 }
@@ -265,7 +271,7 @@ impl User {
         }
     }
 
-    pub fn remove_group_member(
+    pub async fn remove_group_member(
         identity: Principal,
         group_id: u64,
         member: Principal,
@@ -282,7 +288,8 @@ impl User {
                             "remove_group_member",
                             &ic_cdk::caller().to_string(),
                             &member
-                        );
+                        )()
+                        .await;
                         Ok(())
                     }
                 }
@@ -290,7 +297,7 @@ impl User {
         }
     }
 
-    pub fn add_project_member(
+    pub async fn add_project_member(
         identity: Principal,
         group_id: u64,
         project_id: u64,
@@ -308,11 +315,12 @@ impl User {
                     log!(
                         "add_project_member",
                         &ic_cdk::caller().to_string(),
-                        &identity,
+                        &identity.to_string(),
                         &group_id,
                         &project_id,
                         &member
-                    );
+                    )()
+                    .await;
                 }
             },
         };
@@ -322,7 +330,7 @@ impl User {
         Ok(())
     }
 
-    pub fn remove_project_member(
+    pub async fn remove_project_member(
         identity: Principal,
         group_id: u64,
         project_id: u64,
@@ -339,11 +347,12 @@ impl User {
                     log!(
                         "remove_project_member",
                         &ic_cdk::caller().to_string(),
-                        &identity,
+                        &identity.to_string(),
                         &group_id,
                         &project_id,
                         &member
-                    );
+                    )()
+                    .await;
                 }
             },
         };
@@ -353,7 +362,7 @@ impl User {
         Ok(())
     }
 
-    pub fn add_project_canister(
+    pub async fn add_project_canister(
         identity: Principal,
         group_id: u64,
         project_id: u64,
@@ -368,18 +377,19 @@ impl User {
                     log!(
                         "add_project_canister",
                         &ic_cdk::caller().to_string(),
-                        &identity,
+                        &identity.to_string(),
                         &group_id,
                         &project_id,
-                        &canister
-                    );
+                        &canister.to_string()
+                    )()
+                    .await;
                     Ok(())
                 }
             },
         }
     }
 
-    pub fn remove_project_canister(
+    pub async fn remove_project_canister(
         identity: Principal,
         group_id: u64,
         project_id: u64,
@@ -394,18 +404,19 @@ impl User {
                     log!(
                         "remove_project_canister",
                         &ic_cdk::caller().to_string(),
-                        &identity,
+                        &identity.to_string(),
                         &group_id,
                         &project_id,
-                        &canister
-                    );
+                        &canister.to_string()
+                    )()
+                    .await;
                     Ok(())
                 }
             },
         }
     }
 
-    pub fn update_project_git_repo_url(
+    pub async fn update_project_git_repo_url(
         identity: Principal,
         group_id: u64,
         project_id: u64,
@@ -420,18 +431,19 @@ impl User {
                     log!(
                         "update_project_git_repo_url",
                         &ic_cdk::caller().to_string(),
-                        &identity,
+                        &identity.to_string(),
                         &group_id,
                         &project_id,
                         git
-                    );
+                    )()
+                    .await;
                     Ok(())
                 }
             },
         }
     }
 
-    pub fn update_project_visibility(
+    pub async fn update_project_visibility(
         identity: Principal,
         group_id: u64,
         project_id: u64,
@@ -446,18 +458,19 @@ impl User {
                     log!(
                         "update_project_visibility",
                         &ic_cdk::caller().to_string(),
-                        &identity,
+                        &identity.to_string(),
                         &group_id,
                         &project_id,
                         &visibility
-                    );
+                    )()
+                    .await;
                     Ok(())
                 }
             },
         }
     }
 
-    pub fn update_project_description(
+    pub async fn update_project_description(
         identity: Principal,
         group_id: u64,
         project_id: u64,
@@ -472,11 +485,12 @@ impl User {
                     log!(
                         "update_project_description",
                         &ic_cdk::caller().to_string(),
-                        &identity,
+                        &identity.to_string(),
                         &group_id,
                         &project_id,
                         description
-                    );
+                    )()
+                    .await;
                     Ok(())
                 }
             },
@@ -528,11 +542,12 @@ impl User {
                     log!(
                         "stop_project_canister",
                         &ic_cdk::caller().to_string(),
-                        &identity,
+                        &identity.to_string(),
                         &group_id,
                         &project_id,
-                        &canister
-                    );
+                        &canister.to_string()
+                    )()
+                    .await;
                     Ok(())
                 }
             },
@@ -554,11 +569,12 @@ impl User {
                     log!(
                         "start_project_canister",
                         &ic_cdk::caller().to_string(),
-                        &identity,
+                        &identity.to_string(),
                         &group_id,
                         &project_id,
-                        &canister
-                    );
+                        &canister.to_string()
+                    )()
+                    .await;
                     Ok(())
                 }
             },
@@ -580,11 +596,12 @@ impl User {
                     log!(
                         "delete_project_canister",
                         &ic_cdk::caller().to_string(),
-                        &identity,
+                        &identity.to_string(),
                         &group_id,
                         &project_id,
-                        &canister
-                    );
+                        &canister.to_string()
+                    )()
+                    .await;
                     Ok(())
                 }
             },
