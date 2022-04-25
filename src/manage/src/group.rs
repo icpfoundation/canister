@@ -263,4 +263,36 @@ impl Group {
             }
         }
     }
+
+    pub fn get_project_info(&self, project_id: u64) -> Result<Option<&Project>, String> {
+        let caller = ic_cdk::api::caller();
+        match self.visibility {
+            Profile::Public => match self.projects.get(&project_id) {
+                None => Ok(None),
+                Some(project) => match project.visibility {
+                    Profile::Public => Ok(Some(project)),
+                    Profile::Private => {
+                        if let None = project.members.get(&caller) {
+                            return Err("No permission".to_string());
+                        }
+                        Ok(Some(project))
+                    }
+                },
+            },
+            Profile::Private => {
+                if let None = self.members.get(&caller) {
+                    match self.projects.get(&project_id) {
+                        None => return Ok(None),
+                        Some(project) => {
+                            if let None = project.members.get(&caller) {
+                                return Err("No permission".to_string());
+                            }
+                            return Ok(Some(project));
+                        }
+                    }
+                };
+                Ok(self.projects.get(&project_id))
+            }
+        }
+    }
 }

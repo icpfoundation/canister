@@ -130,6 +130,12 @@ start_project_canister:
 install_code:
 	$(dfxManageCanister) install_code '($(user),$(groupId),$(projectId),$(projectCanister))'
 
+get_project_info:
+	$(dfxManageCanister) get_project_info  '($(user),$(groupId),$(projectId))'
+
+get_group_info:
+	$(dfxManageCanister) get_group_info  '($(user),$(groupId))'
+
 test:
 	make restart \
 	&& make deploy \
@@ -139,6 +145,8 @@ test:
 	&& make add_project \
 	&& make add_project_canister \
 	&& make add_project_member \
+	&& make get_project_info \
+	&& make get_group_info \
 	&& make get_user_info \
 	&& make remove_project_member \
 	&& make get_user_info \
@@ -148,7 +156,6 @@ test:
 	# && make update_project_visibility \
 	# && make update_project_description \
 	# && make get_canister_status \
-
 	# && make add_group_member \
 	# && make remove_group_member	\
 

@@ -207,9 +207,16 @@ pub async fn install_code(
     .await
 }
 
-#[cfg(test)]
-mod operation_test {
-    use super::*;
-    #[test]
-    fn emit_test() {}
+#[query]
+pub fn get_project_info(
+    identity: Principal,
+    group_id: u64,
+    project_id: u64,
+) -> Result<Option<Project>, String> {
+    User::get_project_info(identity, group_id, project_id)
+}
+
+#[query]
+pub fn get_group_info(identity: Principal, group_id: u64) -> Result<Option<Group>, String> {
+    User::get_group_info(identity, group_id)
 }

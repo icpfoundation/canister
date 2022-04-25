@@ -629,4 +629,43 @@ impl User {
             },
         }
     }
+
+    pub fn get_project_info(
+        identity: Principal,
+        group_id: u64,
+        project_id: u64,
+    ) -> Result<Option<Project>, String> {
+        match crate::UserStorage.read().unwrap().get(&identity) {
+            None => return Ok(None),
+            Some(user) => match user.groups.get(&group_id) {
+                None => return Ok(None),
+                Some(group) => group.get_project_info(project_id).map(|x| x.cloned()),
+            },
+        }
+    }
+
+    pub fn get_group_info(identity: Principal, group_id: u64) -> Result<Option<Group>, String> {
+        match crate::UserStorage.read().unwrap().get(&identity) {
+            None => return Ok(None),
+            Some(user) => match user.groups.get(&group_id) {
+                None => return Ok(None),
+                Some(group) => match group.visibility {
+                    Profile::Public => {
+                        return Ok(Some(group.clone()));
+                    }
+                    Profile::Private => {
+                        let caller = ic_cdk::api::caller();
+                        match group.members.get(&caller) {
+                            None => {
+                                return Err("No permission".to_string());
+                            }
+                            Some(_) => {
+                                return Ok(Some(group.clone()));
+                            }
+                        }
+                    }
+                },
+            },
+        }
+    }
 }

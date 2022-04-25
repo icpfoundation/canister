@@ -102,6 +102,16 @@ type InstallCodeMode = variant{
     upgrade:null;  
 };
 
+type ProjectInfoRes = variant{
+    Ok:opt Project;
+    Err:text;
+};
+
+type GroupInfoRes = variant{
+    Ok:opt Group;
+    Err:text;
+};
+
 service :{
     get_canister_status:(principal,nat64,nat64,principal)->(CanisterStatusRes);
     get_user_info:(principal) -> (UserRes)query;
@@ -123,4 +133,6 @@ service :{
     stop_project_canister:(principal,nat64,nat64,principal)-> (OptGroupRes);
     delete_project_canister:(principal,nat64,nat64,principal)-> (OptGroupRes);
     install_code:(principal,nat64,nat64,principal,InstallCodeMode,blob,blob) -> (OptGroupRes);
+    get_project_info:(principal,nat64,nat64) -> ( ProjectInfoRes) query;
+    get_group_info:(principal,nat64) -> (GroupInfoRes) query;
 }
