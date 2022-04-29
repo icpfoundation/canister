@@ -12,7 +12,6 @@ thread_local! {
 
 #[update]
 fn create_log(operator: Principal, log: Vec<u8>) {
-    ic_cdk::print(operator.to_string());
     let new_log = log::Log::new(operator, log);
     LOG_STORAGE.with(|log_storage| {
         if let Some(data) = log_storage.borrow_mut().get_mut(&operator) {

@@ -7,6 +7,7 @@ use ic_cdk::export::candid::Nat;
 use ic_cdk::export::candid::{CandidType, Deserialize};
 use ic_cdk::export::Principal;
 use std::collections::HashMap;
+use std::future::Future;
 #[derive(CandidType, Debug, Deserialize, Clone)]
 pub struct Project {
     pub id: u64,
@@ -139,13 +140,13 @@ impl Project {
         }
     }
 
-    pub async fn get_canister_status(
+    pub fn get_canister_status(
         &self,
         canister: Principal,
-    ) -> Result<CanisterStatusResponse, String> {
+    ) -> Result<impl Future<Output = Result<CanisterStatusResponse, String>>, String> {
         if self.canisters.contains(&canister) {
             self.identity_check(Authority::Read)?;
-            return ManageCanister::get_canister_status(canister).await;
+            return Ok(async move { ManageCanister::get_canister_status(canister).await });
         }
         return Err("canisters do not exist in the project".to_string());
     }
@@ -169,40 +170,51 @@ impl Project {
         return Err("canisters do not exist in the project".to_string());
     }
 
-    pub async fn stop_canister(&self, canister: Principal) -> Result<(), String> {
+    pub fn stop_canister(
+        &self,
+        canister: Principal,
+    ) -> Result<impl Future<Output = Result<(), String>>, String> {
         if self.canisters.contains(&canister) {
             self.identity_check(Authority::Operational)?;
-            return ManageCanister::stop_canister(canister).await;
+            return Ok(async move { ManageCanister::stop_canister(canister).await });
         }
         return Err("canisters do not exist in the project".to_string());
     }
 
-    pub async fn start_canister(&self, canister: Principal) -> Result<(), String> {
+    pub fn start_canister(
+        &self,
+        canister: Principal,
+    ) -> Result<impl Future<Output = Result<(), String>>, String> {
         if self.canisters.contains(&canister) {
             self.identity_check(Authority::Operational)?;
-            return ManageCanister::start_canister(canister).await;
+            return Ok(async move { ManageCanister::start_canister(canister).await });
         }
         return Err("canisters do not exist in the project".to_string());
     }
 
-    pub async fn delete_canister(&self, canister: Principal) -> Result<(), String> {
+    pub fn delete_canister(
+        &self,
+        canister: Principal,
+    ) -> Result<impl Future<Output = Result<(), String>>, String> {
         if self.canisters.contains(&canister) {
             self.identity_check(Authority::Operational)?;
-            return ManageCanister::delete_canister(canister).await;
+            return Ok(async move { ManageCanister::delete_canister(canister).await });
         }
         return Err("canisters do not exist in the project".to_string());
     }
 
-    pub async fn install_code(
+    pub fn install_code(
         &self,
         canister: Principal,
         install_mod: InstallCodeMode,
         wasm: Vec<u8>,
         args: Vec<u8>,
-    ) -> Result<(), String> {
+    ) -> Result<impl Future<Output = Result<(), String>>, String> {
         if self.canisters.contains(&canister) {
             self.identity_check(Authority::Operational)?;
-            return ManageCanister::install_code(canister, install_mod, wasm, args).await;
+            return Ok(async move {
+                ManageCanister::install_code(canister, install_mod, wasm, args).await
+            });
         }
         return Err("canisters do not exist in the project".to_string());
     }

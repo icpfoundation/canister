@@ -17,6 +17,9 @@ use ic_cdk::export::Principal;
 use manage::{CanisterSettings, CanisterStatusResponse, InstallCodeMode, ManageCanister};
 use member::Member;
 use project::Project;
+use std::cell::RefCell;
+use std::future::Future;
+use std::pin::Pin;
 use std::sync::RwLock;
 use types::Profile;
 use user::User;
@@ -31,163 +34,468 @@ lazy_static! {
     pub static ref GroupStorage: RwLock<HashMap<u64, Group>> = RwLock::new(HashMap::new());
     pub static ref UserStorage: RwLock<HashMap<Principal, User>> = RwLock::new(HashMap::new());
 }
+type User_Storage = HashMap<Principal, User>;
+thread_local! {
+    static USER_STORAGE: RefCell<User_Storage> = RefCell::default();
+}
+
 #[init]
-fn init() {}
+async fn init() {}
 
 #[update]
 async fn get_canister_status(
-    user: Principal,
+    ii: Principal,
     group_id: u64,
     project_id: u64,
     canister: Principal,
 ) -> Result<CanisterStatusResponse, String> {
-    User::get_canister_status(user, group_id, project_id, canister).await
+    let task = USER_STORAGE.with(|user_storage| match user_storage.borrow().get(&ii) {
+        None => {
+            return Err("user does not exist".to_string());
+        }
+        Some(user) => user.get_canister_status(group_id, project_id, canister),
+    })?;
+    futures::join!(task).0
 }
 
 #[update]
 fn add_user(name: String, profile: Profile) -> Result<(), String> {
     let user = User::new(name, profile, ic_cdk::caller());
-    user.storage()
+    USER_STORAGE.with(|user_storage| {
+        user_storage.borrow_mut().insert(ic_cdk::caller(), user);
+    });
+    Ok(())
 }
 
 #[update]
 async fn add_group(group: Group) -> Result<(), String> {
-    User::add_group(ic_cdk::caller(), group).await
+    USER_STORAGE.with(|user_storage| {
+        match user_storage.borrow_mut().get_mut(&ic_cdk::caller()) {
+            None => {
+                return Err("user does not exist".to_string());
+            }
+            Some(user) => user.add_group(group.clone()),
+        }
+    })?;
+    log!(
+        "add_group ",
+        &ic_cdk::caller().to_string(),
+        &ic_cdk::caller().to_string(),
+        &group
+    )()
+    .await;
+    Ok(())
 }
 
 #[update]
 async fn remove_group(group_id: u64) -> Result<(), String> {
-    User::remove_group(ic_cdk::caller(), group_id).await
+    USER_STORAGE.with(|user_storage| {
+        match user_storage.borrow_mut().get_mut(&ic_cdk::caller()) {
+            None => {
+                return Err("user does not exist".to_string());
+            }
+            Some(user) => user.remove_group(group_id),
+        }
+    })?;
+    log!(
+        "remove remove_group",
+        &ic_cdk::caller().to_string(),
+        &ic_cdk::caller().to_string(),
+        &group_id
+    )()
+    .await;
+    Ok(())
 }
 
 #[query]
-fn get_user_info(user: Principal) -> Result<User, String> {
-    User::get_user_info(user)
+fn get_user_info(ii: Principal) -> Result<User, String> {
+    USER_STORAGE.with(|user_storage| match user_storage.borrow().get(&ii) {
+        None => {
+            return Err("user does not exist".to_string());
+        }
+        Some(user) => user.get_user_info(),
+    })
 }
 
 #[update]
 async fn add_project(group_id: u64, project: Project) -> Result<(), String> {
-    User::add_project(ic_cdk::caller(), group_id, project).await
+    let members = USER_STORAGE.with(|user_storage| {
+        match user_storage.borrow_mut().get_mut(&ic_cdk::caller()) {
+            None => {
+                return Err("user does not exist".to_string());
+            }
+            Some(user) => user.add_project(group_id, project.clone()),
+        }
+    })?;
+
+    USER_STORAGE.with(|user_storage| {
+        for i in members {
+            match user_storage.borrow_mut().get_mut(&i) {
+                None => {
+                    return Err("user does not exist".to_string());
+                }
+                Some(user) => user.add_project_relation(ic_cdk::caller(), group_id, project.id),
+            };
+        }
+        Ok(())
+    })?;
+    log!("add_project", &ic_cdk::caller().to_string(), &project)().await;
+    Ok(())
 }
 
 #[update]
 async fn remove_project(group_id: u64, project_id: u64) -> Result<(), String> {
-    User::remove_project(ic_cdk::caller(), group_id, project_id).await
+    let members = USER_STORAGE.with(|user_storage| {
+        match user_storage.borrow_mut().get_mut(&ic_cdk::caller()) {
+            None => {
+                return Err("user does not exist".to_string());
+            }
+            Some(user) => user.remove_project(group_id, project_id),
+        }
+    })?;
+
+    USER_STORAGE.with(|user_storage| {
+        for i in members {
+            match user_storage.borrow_mut().get_mut(&i) {
+                None => {
+                    return Err("user does not exist".to_string());
+                }
+                Some(user) => user.remove_project_relation(ic_cdk::caller(), project_id),
+            };
+        }
+        Ok(())
+    })?;
+
+    log!("remove_project", &ic_cdk::caller().to_string(), &project_id)().await;
+    Ok(())
 }
 
 #[update]
 async fn add_group_member(group_id: u64, member: Member) -> Result<(), String> {
-    User::add_group_member(ic_cdk::caller(), group_id, member).await
+    USER_STORAGE.with(|user_storage| {
+        match user_storage.borrow_mut().get_mut(&ic_cdk::caller()) {
+            None => {
+                return Err("user does not exist".to_string());
+            }
+            Some(user) => user.add_group_member(group_id, member.clone()),
+        }
+    })?;
+
+    log!("add_group_member", &ic_cdk::caller().to_string(), &member)().await;
+    Ok(())
 }
 
 #[update]
 async fn remove_group_member(group_id: u64, member: Principal) -> Result<(), String> {
-    User::remove_group_member(ic_cdk::caller(), group_id, member).await
+    USER_STORAGE.with(|user_storage| {
+        match user_storage.borrow_mut().get_mut(&ic_cdk::caller()) {
+            None => {
+                return Err("user does not exist".to_string());
+            }
+            Some(user) => user.remove_group_member(group_id, member),
+        }
+    })?;
+
+    log!(
+        "remove_group_member",
+        &ic_cdk::caller().to_string(),
+        &member
+    )()
+    .await;
+    Ok(())
 }
 
 #[update]
 async fn add_project_member(
-    user: Principal,
+    ii: Principal,
     group_id: u64,
     project_id: u64,
     member: Member,
 ) -> Result<(), String> {
-    User::add_project_member(user, group_id, project_id, member).await
+    USER_STORAGE.with(
+        |user_storage| match user_storage.borrow_mut().get_mut(&ii) {
+            None => {
+                return Err("user does not exist".to_string());
+            }
+            Some(user) => user.add_project_member(group_id, project_id, member.clone()),
+        },
+    )?;
+    USER_STORAGE.with(|user_storage| {
+        match user_storage.borrow_mut().get_mut(&member.identity) {
+            None => {
+                return Err("user does not exist".to_string());
+            }
+            Some(user) => user.add_project_relation(ii, group_id, project_id),
+        }
+    })?;
+
+    log!(
+        "add_project_member",
+        &ic_cdk::caller().to_string(),
+        &ii.to_string(),
+        &group_id,
+        &project_id,
+        &member
+    )()
+    .await;
+    Ok(())
 }
 
 #[update]
 async fn remove_project_member(
-    user: Principal,
+    ii: Principal,
     group_id: u64,
     project_id: u64,
     member: Principal,
 ) -> Result<(), String> {
-    User::remove_project_member(user, group_id, project_id, member).await
+    USER_STORAGE.with(
+        |user_storage| match user_storage.borrow_mut().get_mut(&ii) {
+            None => {
+                return Err("user does not exist".to_string());
+            }
+            Some(user) => user.remove_project_member(group_id, project_id, member),
+        },
+    )?;
+    USER_STORAGE.with(
+        |user_storage| match user_storage.borrow_mut().get_mut(&member) {
+            None => {
+                return Err("user does not exist".to_string());
+            }
+            Some(user) => user.remove_project_relation(ii, project_id),
+        },
+    )?;
+
+    log!(
+        "remove_project_member",
+        &ic_cdk::caller().to_string(),
+        &ii.to_string(),
+        &group_id,
+        &project_id,
+        &member
+    )()
+    .await;
+    Ok(())
 }
 
 #[update]
 async fn add_project_canister(
-    user: Principal,
+    ii: Principal,
     group_id: u64,
     project_id: u64,
     canister: Principal,
 ) -> Result<(), String> {
-    User::add_project_canister(user, group_id, project_id, canister).await
+    USER_STORAGE.with(
+        |user_storage| match user_storage.borrow_mut().get_mut(&ii) {
+            None => {
+                return Err("user does not exist".to_string());
+            }
+            Some(user) => user.add_project_canister(group_id, project_id, canister),
+        },
+    )?;
+
+    log!(
+        "add_project_canister",
+        &ic_cdk::caller().to_string(),
+        &ii.to_string(),
+        &group_id,
+        &project_id,
+        &canister.to_string()
+    )()
+    .await;
+    Ok(())
 }
 
 #[update]
 async fn remove_project_canister(
-    user: Principal,
+    ii: Principal,
     group_id: u64,
     project_id: u64,
     canister: Principal,
 ) -> Result<(), String> {
-    User::remove_project_canister(user, group_id, project_id, canister).await
+    USER_STORAGE.with(
+        |user_storage| match user_storage.borrow_mut().get_mut(&ii) {
+            None => {
+                return Err("user does not exist".to_string());
+            }
+            Some(user) => user.remove_project_canister(group_id, project_id, canister),
+        },
+    )?;
+
+    log!(
+        "remove_project_canister",
+        &ic_cdk::caller().to_string(),
+        &ii.to_string(),
+        &group_id,
+        &project_id,
+        &canister.to_string()
+    )()
+    .await;
+    Ok(())
 }
 
 #[update]
 pub async fn update_project_git_repo_url(
-    user: Principal,
+    ii: Principal,
     group_id: u64,
     project_id: u64,
     git: String,
 ) -> Result<(), String> {
-    User::update_project_git_repo_url(user, group_id, project_id, git.as_str()).await
+    USER_STORAGE.with(
+        |user_storage| match user_storage.borrow_mut().get_mut(&ii) {
+            None => {
+                return Err("user does not exist".to_string());
+            }
+            Some(user) => user.update_project_git_repo_url(group_id, project_id, &git),
+        },
+    )?;
+    log!(
+        "update_project_git_repo_url",
+        &ic_cdk::caller().to_string(),
+        &ii.to_string(),
+        &group_id,
+        &project_id,
+        git
+    )()
+    .await;
+    Ok(())
 }
 
 #[update]
 pub async fn update_project_visibility(
-    user: Principal,
+    ii: Principal,
     group_id: u64,
     project_id: u64,
     visibility: Profile,
 ) -> Result<(), String> {
-    User::update_project_visibility(user, group_id, project_id, visibility).await
+    USER_STORAGE.with(
+        |user_storage| match user_storage.borrow_mut().get_mut(&ii) {
+            None => {
+                return Err("user does not exist".to_string());
+            }
+            Some(user) => user.update_project_visibility(group_id, project_id, visibility.clone()),
+        },
+    )?;
+
+    log!(
+        "update_project_visibility",
+        &ic_cdk::caller().to_string(),
+        &ii.to_string(),
+        &group_id,
+        &project_id,
+        &visibility
+    )()
+    .await;
+    Ok(())
 }
 
 #[update]
 pub async fn update_project_description(
-    user: Principal,
+    ii: Principal,
     group_id: u64,
     project_id: u64,
     description: String,
 ) -> Result<(), String> {
-    User::update_project_description(user, group_id, project_id, description.as_str()).await
+    USER_STORAGE.with(
+        |user_storage| match user_storage.borrow_mut().get_mut(&ii) {
+            None => {
+                return Err("user does not exist".to_string());
+            }
+            Some(user) => user.update_project_description(group_id, project_id, &description),
+        },
+    )?;
+    log!(
+        "update_project_description",
+        &ic_cdk::caller().to_string(),
+        &ii.to_string(),
+        &group_id,
+        &project_id,
+        description
+    )()
+    .await;
+    Ok(())
 }
 
 #[update]
 pub async fn start_project_canister(
-    user: Principal,
+    ii: Principal,
     group_id: u64,
     project_id: u64,
     canister: Principal,
 ) -> Result<(), String> {
-    User::start_project_canister(user, group_id, project_id, canister).await
+    let task = USER_STORAGE.with(|user_storage| match user_storage.borrow().get(&ii) {
+        None => {
+            return Err("user does not exist".to_string());
+        }
+        Some(user) => user.start_project_canister(group_id, project_id, canister),
+    })?;
+    futures::join!(task);
+    log!(
+        "start_project_canister",
+        &ic_cdk::caller().to_string(),
+        &ii.to_string(),
+        &group_id,
+        &project_id,
+        &canister.to_string()
+    )()
+    .await;
+    Ok(())
 }
 
 #[update]
 pub async fn stop_project_canister(
-    user: Principal,
+    ii: Principal,
     group_id: u64,
     project_id: u64,
     canister: Principal,
 ) -> Result<(), String> {
-    User::stop_project_canister(user, group_id, project_id, canister).await
+    let task = USER_STORAGE.with(|user_storage| match user_storage.borrow().get(&ii) {
+        None => {
+            return Err("user does not exist".to_string());
+        }
+        Some(user) => user.stop_project_canister(group_id, project_id, canister),
+    })?;
+    futures::join!(task);
+    log!(
+        "stop_project_canister",
+        &ic_cdk::caller().to_string(),
+        &ii.to_string(),
+        &group_id,
+        &project_id,
+        &canister.to_string()
+    )()
+    .await;
+    Ok(())
 }
 
 #[update]
 pub async fn delete_project_canister(
-    user: Principal,
+    ii: Principal,
     group_id: u64,
     project_id: u64,
     canister: Principal,
 ) -> Result<(), String> {
-    User::delete_project_canister(user, group_id, project_id, canister).await
+    let task = USER_STORAGE.with(|user_storage| match user_storage.borrow().get(&ii) {
+        None => {
+            return Err("user does not exist".to_string());
+        }
+        Some(user) => user.delete_project_canister(group_id, project_id, canister),
+    })?;
+    futures::join!(task);
+    log!(
+        "delete_project_canister",
+        &ic_cdk::caller().to_string(),
+        &ii.to_string(),
+        &group_id,
+        &project_id,
+        &canister.to_string()
+    )()
+    .await;
+    Ok(())
 }
 
 #[update]
 pub async fn install_code(
-    identity: Principal,
+    ii: Principal,
     group_id: u64,
     project_id: u64,
     canister: Principal,
@@ -195,28 +503,45 @@ pub async fn install_code(
     wasm: Vec<u8>,
     args: Vec<u8>,
 ) -> Result<(), String> {
-    User::install_code(
-        identity,
-        group_id,
-        project_id,
-        canister,
-        install_mod,
-        wasm,
-        args,
-    )
-    .await
+    let task = USER_STORAGE.with(|user_storage| match user_storage.borrow().get(&ii) {
+        None => {
+            return Err("user does not exist".to_string());
+        }
+        Some(user) => user.install_code(group_id, project_id, canister, install_mod, wasm, args),
+    })?;
+    futures::join!(task);
+    log!(
+        "install_code",
+        &ic_cdk::caller().to_string(),
+        &ii.to_string(),
+        &group_id,
+        &project_id,
+        &canister.to_string()
+    )()
+    .await;
+    Ok(())
 }
 
 #[query]
 pub fn get_project_info(
-    identity: Principal,
+    ii: Principal,
     group_id: u64,
     project_id: u64,
 ) -> Result<Option<Project>, String> {
-    User::get_project_info(identity, group_id, project_id)
+    USER_STORAGE.with(|user_storage| match user_storage.borrow().get(&ii) {
+        None => {
+            return Err("user does not exist".to_string());
+        }
+        Some(user) => user.get_project_info(group_id, project_id),
+    })
 }
 
 #[query]
-pub fn get_group_info(identity: Principal, group_id: u64) -> Result<Option<Group>, String> {
-    User::get_group_info(identity, group_id)
+pub fn get_group_info(ii: Principal, group_id: u64) -> Result<Option<Group>, String> {
+    USER_STORAGE.with(|user_storage| match user_storage.borrow().get(&ii) {
+        None => {
+            return Err("user does not exist".to_string());
+        }
+        Some(user) => user.get_group_info(group_id),
+    })
 }

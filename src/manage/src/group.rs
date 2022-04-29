@@ -8,7 +8,7 @@ use ic_cdk::api::caller;
 use ic_cdk::export::candid::Deserialize;
 use ic_cdk::export::Principal;
 use std::collections::HashMap;
-
+use std::future::Future;
 #[derive(CandidType, Debug, Deserialize, Clone)]
 pub struct Group {
     pub id: u64,
@@ -192,14 +192,14 @@ impl Group {
         }
     }
 
-    pub async fn get_canister_status(
+    pub fn get_canister_status(
         &self,
         project_id: u64,
         canister: Principal,
-    ) -> Result<CanisterStatusResponse, String> {
+    ) -> Result<impl Future<Output = Result<CanisterStatusResponse, String>>, String> {
         match self.projects.get(&project_id) {
             None => Err("Project does not exist".to_string()),
-            Some(project) => project.get_canister_status(canister).await,
+            Some(project) => project.get_canister_status(canister),
         }
     }
 
@@ -214,53 +214,50 @@ impl Group {
         }
     }
 
-    pub async fn stop_project_canister(
+    pub fn stop_project_canister(
         &self,
         project_id: u64,
         canister: Principal,
-    ) -> Result<(), String> {
+    ) -> Result<impl Future<Output = Result<(), String>>, String> {
         match self.projects.get(&project_id) {
             None => Err("Project does not exist....".to_string()),
-            Some(project) => project.stop_canister(canister).await,
+            Some(project) => project.stop_canister(canister),
         }
     }
 
-    pub async fn start_project_canister(
+    pub fn start_project_canister(
         &self,
         project_id: u64,
         canister: Principal,
-    ) -> Result<(), String> {
+    ) -> Result<impl Future<Output = Result<(), String>>, String> {
         match self.projects.get(&project_id) {
             None => Err("Project does not exist".to_string()),
-            Some(project) => project.start_canister(canister).await,
+            Some(project) => project.start_canister(canister),
         }
     }
 
-    pub async fn delete_project_canister(
+    pub fn delete_project_canister(
         &self,
         project_id: u64,
         canister: Principal,
-    ) -> Result<(), String> {
+    ) -> Result<impl Future<Output = Result<(), String>>, String> {
         match self.projects.get(&project_id) {
             None => Err("Project does not exist".to_string()),
-            Some(project) => project.delete_canister(canister).await,
+            Some(project) => project.delete_canister(canister),
         }
     }
-    pub async fn install_code(
+
+    pub fn install_code(
         &self,
         project_id: u64,
         canister: Principal,
         install_mod: InstallCodeMode,
         wasm: Vec<u8>,
         args: Vec<u8>,
-    ) -> Result<(), String> {
+    ) -> Result<impl Future<Output = Result<(), String>>, String> {
         match self.projects.get(&project_id) {
             None => Err("Project does not exist".to_string()),
-            Some(project) => {
-                project
-                    .install_code(canister, install_mod, wasm, args)
-                    .await
-            }
+            Some(project) => project.install_code(canister, install_mod, wasm, args),
         }
     }
 

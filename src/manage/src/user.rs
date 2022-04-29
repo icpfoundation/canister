@@ -8,6 +8,8 @@ use ic_cdk::api::caller;
 use ic_cdk::export::candid::{CandidType, Deserialize};
 use ic_cdk::export::Principal;
 use std::collections::HashMap;
+use std::future::Future;
+use std::pin::Pin;
 #[macro_use]
 use crate::operation;
 
@@ -58,72 +60,53 @@ impl User {
         return Err("no permission".to_string());
     }
 
-    pub fn get_user_info(identity: Principal) -> Result<User, String> {
-        match crate::UserStorage.read().unwrap().get(&identity) {
-            None => return Err("user does not exist".to_string()),
-            Some(user) => {
-                if caller() != identity {
-                    if let Profile::Private = user.profile {
-                        return Err("user information is private and cannot be viewed".to_string());
-                    }
-                }
-
-                let mut cp_user = user.clone();
-                let publick_group: HashMap<u64, Group> = cp_user
-                    .groups
-                    .into_iter()
-                    .filter(|(k, v)| {
-                        if let Profile::Public = v.visibility {
-                            return true;
-                        };
-                        return false;
-                    })
-                    .collect();
-
-                cp_user.groups = publick_group;
-                Ok(cp_user)
+    pub fn get_user_info(&self) -> Result<User, String> {
+        // match crate::UserStorage.read().unwrap().get(&identity) {
+        //     None => return Err("user does not exist".to_string()),
+        //     Some(user) => {
+        if caller() != self.identity {
+            if let Profile::Private = self.profile {
+                return Err("user information is private and cannot be viewed".to_string());
             }
         }
+
+        let mut cp_user = self.clone();
+        let publick_group: HashMap<u64, Group> = cp_user
+            .groups
+            .into_iter()
+            .filter(|(k, v)| {
+                if let Profile::Public = v.visibility {
+                    return true;
+                };
+                return false;
+            })
+            .collect();
+
+        cp_user.groups = publick_group;
+        Ok(cp_user)
+        //     }
+        // }
     }
 
-    pub async fn add_group(identity: Principal, group: Group) -> Result<(), String> {
-        match crate::UserStorage.write().unwrap().get_mut(&identity) {
-            None => return Err("user does not exist".to_string()),
-            Some(user) => {
-                user.identity_check()?;
-                log!(
-                    "add_group ",
-                    &ic_cdk::caller().to_string(),
-                    &identity.to_string(),
-                    &group
-                )()
-                .await;
-                user.groups.insert(group.id, group);
-
-                Ok(())
-            }
-        }
+    pub fn add_group(&mut self, group: Group) -> Result<(), String> {
+        self.identity_check()?;
+        self.groups.insert(group.id, group);
+        Ok(())
     }
 
-    pub async fn remove_group(identity: Principal, group_id: u64) -> Result<(), String> {
-        match crate::UserStorage.write().unwrap().get_mut(&identity) {
-            None => return Err("user does not exist".to_string()),
-            Some(user) => {
-                user.identity_check()?;
-                user.groups.remove(&group_id);
-                log!(
-                    "remove remove_group",
-                    &ic_cdk::caller().to_string(),
-                    &identity.to_string(),
-                    &group_id
-                )()
-                .await;
-                Ok(())
-            }
-        }
+    pub fn remove_group(&mut self, group_id: u64) -> Result<(), String> {
+        // match crate::UserStorage.write().unwrap().get_mut(&identity) {
+        //     None => return Err("user does not exist".to_string()),
+        //     Some(user) => {
+        self.identity_check()?;
+        self.groups.remove(&group_id);
+
+        Ok(())
+        //     }
+        // }
     }
 
-    fn add_project_relation(
+    pub fn add_project_relation(
         &mut self,
         relation_project_user: Principal,
         group_id: u64,
@@ -143,7 +126,7 @@ impl User {
         Ok(())
     }
 
-    fn remove_project_relation(
+    pub fn remove_project_relation(
         &mut self,
         relation_project_user: Principal,
         project_id: u64,
@@ -192,323 +175,167 @@ impl User {
         }
     }
 
-    pub async fn add_project(
-        identity: Principal,
+    pub fn add_project(
+        &mut self,
         group_id: u64,
         project: Project,
-    ) -> Result<(), String> {
-        let mut user_storage = crate::UserStorage.write().unwrap();
+    ) -> Result<Vec<Principal>, String> {
+        //let mut user_storage = crate::UserStorage.write().unwrap();
         let mut members: Vec<Principal> = Vec::new();
         let project_id: u64;
-        match user_storage.get_mut(&identity) {
-            None => return Err("user does not exist".to_string()),
-            Some(user) => match user.groups.get_mut(&group_id) {
-                None => return Err("Group does not exist".to_string()),
-                Some(group) => {
-                    members = project.members.keys().map(|x| x.clone()).collect();
-                    project_id = project.id;
-                    group.add_project(project.clone())?;
-                    log!("add_project", &ic_cdk::caller().to_string(), &project)().await;
-                }
-            },
-        };
-        for i in members.iter() {
-            if let Some(u) = user_storage.get_mut(i) {
-                u.add_project_relation(identity, group_id, project_id);
+        // match user_storage.get_mut(&identity) {
+        //     None => return Err("user does not exist".to_string()),
+
+        match self.groups.get_mut(&group_id) {
+            None => return Err("Group does not exist".to_string()),
+            Some(group) => {
+                members = project.members.keys().map(|x| x.clone()).collect();
+                project_id = project.id;
+                group.add_project(project.clone());
             }
-        }
-        Ok(())
+        };
+        Ok(members)
     }
 
-    pub async fn remove_project(
-        identity: Principal,
+    pub fn remove_project(
+        &mut self,
         group_id: u64,
         project_id: u64,
-    ) -> Result<(), String> {
-        let mut user_storage = crate::UserStorage.write().unwrap();
+    ) -> Result<Vec<Principal>, String> {
+        // let mut user_storage = crate::UserStorage.write().unwrap();
         let mut members: Vec<Principal> = Vec::new();
 
-        match user_storage.get_mut(&identity) {
-            None => return Err("user does not exist".to_string()),
-            Some(user) => match user.groups.get_mut(&group_id) {
-                None => return Err("Group does not exist".to_string()),
-                Some(group) => {
-                    if let Some(project) = group.projects.get(&project_id) {
-                        members = project.members.keys().map(|x| x.clone()).collect();
-                    }
-                    group.remove_project(project_id)?;
-                    log!("remove_project", &ic_cdk::caller().to_string(), &project_id)().await;
+        // match user_storage.get_mut(&identity) {
+        //     None => return Err("user does not exist".to_string()),
+        match self.groups.get_mut(&group_id) {
+            None => return Err("Group does not exist".to_string()),
+            Some(group) => {
+                if let Some(project) = group.projects.get(&project_id) {
+                    members = project.members.keys().map(|x| x.clone()).collect();
                 }
-            },
+                group.remove_project(project_id)?;
+            }
         };
 
-        for i in members.iter() {
-            if let Some(u) = user_storage.get_mut(i) {
-                u.remove_project_relation(identity, project_id);
-            }
-        }
-        Ok(())
+        Ok(members)
     }
 
-    pub async fn add_group_member(
-        identity: Principal,
-        group_id: u64,
-        member: Member,
-    ) -> Result<(), String> {
-        match crate::UserStorage.write().unwrap().get_mut(&identity) {
-            None => return Err("user does not exist".to_string()),
-            Some(user) => {
-                user.identity_check()?;
-                match user.groups.get_mut(&group_id) {
-                    None => return Err("Group does not exist".to_string()),
-                    Some(group) => {
-                        group.add_member(member.clone())?;
-                        log!("add_group_member", &ic_cdk::caller().to_string(), &member)().await;
-                        Ok(())
-                    }
-                }
+    pub fn add_group_member(&mut self, group_id: u64, member: Member) -> Result<(), String> {
+        self.identity_check()?;
+        match self.groups.get_mut(&group_id) {
+            None => return Err("Group does not exist".to_string()),
+            Some(group) => {
+                group.add_member(member.clone())?;
+                Ok(())
             }
         }
     }
 
-    pub async fn remove_group_member(
-        identity: Principal,
-        group_id: u64,
-        member: Principal,
-    ) -> Result<(), String> {
-        match crate::UserStorage.write().unwrap().get_mut(&identity) {
-            None => return Err("user does not exist".to_string()),
-            Some(user) => {
-                user.identity_check()?;
-                match user.groups.get_mut(&group_id) {
-                    None => return Err("Group does not exist".to_string()),
-                    Some(group) => {
-                        group.remove_member(member);
-                        log!(
-                            "remove_group_member",
-                            &ic_cdk::caller().to_string(),
-                            &member
-                        )()
-                        .await;
-                        Ok(())
-                    }
-                }
+    pub fn remove_group_member(&mut self, group_id: u64, member: Principal) -> Result<(), String> {
+        self.identity_check()?;
+        match self.groups.get_mut(&group_id) {
+            None => return Err("Group does not exist".to_string()),
+            Some(group) => {
+                group.remove_member(member);
+
+                Ok(())
             }
         }
     }
 
-    pub async fn add_project_member(
-        identity: Principal,
+    pub fn add_project_member(
+        &mut self,
         group_id: u64,
         project_id: u64,
         member: Member,
     ) -> Result<(), String> {
-        let mut user_storage = crate::UserStorage.write().unwrap();
-        let iden: Principal;
-        match user_storage.get_mut(&identity) {
-            None => return Err("user does not exist".to_string()),
-            Some(user) => match user.groups.get_mut(&group_id) {
-                None => return Err("group does not exist".to_string()),
-                Some(group) => {
-                    iden = member.identity.clone();
-                    group.add_project_member(project_id, member.clone())?;
-                    log!(
-                        "add_project_member",
-                        &ic_cdk::caller().to_string(),
-                        &identity.to_string(),
-                        &group_id,
-                        &project_id,
-                        &member
-                    )()
-                    .await;
-                }
-            },
-        };
-        if let Some(u) = user_storage.get_mut(&iden) {
-            u.add_project_relation(identity, group_id, project_id)?;
+        match self.groups.get_mut(&group_id) {
+            None => return Err("group does not exist".to_string()),
+            Some(group) => group.add_project_member(project_id, member.clone()),
         }
-        Ok(())
     }
 
-    pub async fn remove_project_member(
-        identity: Principal,
+    pub fn remove_project_member(
+        &mut self,
         group_id: u64,
         project_id: u64,
         member: Principal,
     ) -> Result<(), String> {
-        let mut user_storage = crate::UserStorage.write().unwrap();
-        match user_storage.get_mut(&identity) {
-            None => return Err("user does not exist".to_string()),
-            Some(user) => match user.groups.get_mut(&group_id) {
-                None => return Err("group does not exist".to_string()),
-
-                Some(group) => {
-                    group.remove_project_member(project_id, member)?;
-                    log!(
-                        "remove_project_member",
-                        &ic_cdk::caller().to_string(),
-                        &identity.to_string(),
-                        &group_id,
-                        &project_id,
-                        &member
-                    )()
-                    .await;
-                }
-            },
-        };
-        if let Some(u) = user_storage.get_mut(&member) {
-            u.remove_project_relation(identity, project_id);
+        match self.groups.get_mut(&group_id) {
+            None => return Err("group does not exist".to_string()),
+            Some(group) => group.remove_project_member(project_id, member),
         }
-        Ok(())
     }
 
-    pub async fn add_project_canister(
-        identity: Principal,
+    pub fn add_project_canister(
+        &mut self,
         group_id: u64,
         project_id: u64,
         canister: Principal,
     ) -> Result<(), String> {
-        match crate::UserStorage.write().unwrap().get_mut(&identity) {
-            None => return Err("user does not exist".to_string()),
-            Some(user) => match user.groups.get_mut(&group_id) {
-                None => return Err("group does not exist".to_string()),
-                Some(group) => {
-                    group.add_project_canister(project_id, canister)?;
-                    log!(
-                        "add_project_canister",
-                        &ic_cdk::caller().to_string(),
-                        &identity.to_string(),
-                        &group_id,
-                        &project_id,
-                        &canister.to_string()
-                    )()
-                    .await;
-                    Ok(())
-                }
-            },
+        match self.groups.get_mut(&group_id) {
+            None => return Err("group does not exist".to_string()),
+            Some(group) => group.add_project_canister(project_id, canister),
         }
     }
 
-    pub async fn remove_project_canister(
-        identity: Principal,
+    pub fn remove_project_canister(
+        &mut self,
         group_id: u64,
         project_id: u64,
         canister: Principal,
     ) -> Result<(), String> {
-        match crate::UserStorage.write().unwrap().get_mut(&identity) {
-            None => return Err("user does not exist".to_string()),
-            Some(user) => match user.groups.get_mut(&group_id) {
-                None => return Err("group does not exist".to_string()),
-                Some(group) => {
-                    group.remove_project_canister(project_id, canister)?;
-                    log!(
-                        "remove_project_canister",
-                        &ic_cdk::caller().to_string(),
-                        &identity.to_string(),
-                        &group_id,
-                        &project_id,
-                        &canister.to_string()
-                    )()
-                    .await;
-                    Ok(())
-                }
-            },
+        match self.groups.get_mut(&group_id) {
+            None => return Err("group does not exist".to_string()),
+            Some(group) => group.remove_project_canister(project_id, canister),
         }
     }
 
-    pub async fn update_project_git_repo_url(
-        identity: Principal,
+    pub fn update_project_git_repo_url(
+        &mut self,
         group_id: u64,
         project_id: u64,
         git: &str,
     ) -> Result<(), String> {
-        match crate::UserStorage.write().unwrap().get_mut(&identity) {
-            None => return Err("user does not exist".to_string()),
-            Some(user) => match user.groups.get_mut(&group_id) {
-                None => return Err("group does not exist".to_string()),
-                Some(group) => {
-                    group.update_git_repo_url(project_id, git)?;
-                    log!(
-                        "update_project_git_repo_url",
-                        &ic_cdk::caller().to_string(),
-                        &identity.to_string(),
-                        &group_id,
-                        &project_id,
-                        git
-                    )()
-                    .await;
-                    Ok(())
-                }
-            },
+        match self.groups.get_mut(&group_id) {
+            None => return Err("group does not exist".to_string()),
+            Some(group) => group.update_git_repo_url(project_id, git),
         }
     }
 
-    pub async fn update_project_visibility(
-        identity: Principal,
+    pub fn update_project_visibility(
+        &mut self,
         group_id: u64,
         project_id: u64,
         visibility: Profile,
     ) -> Result<(), String> {
-        match crate::UserStorage.write().unwrap().get_mut(&identity) {
-            None => return Err("user does not exist".to_string()),
-            Some(user) => match user.groups.get_mut(&group_id) {
-                None => return Err("group does not exist".to_string()),
-                Some(group) => {
-                    group.update_visibility(project_id, visibility.clone())?;
-                    log!(
-                        "update_project_visibility",
-                        &ic_cdk::caller().to_string(),
-                        &identity.to_string(),
-                        &group_id,
-                        &project_id,
-                        &visibility
-                    )()
-                    .await;
-                    Ok(())
-                }
-            },
+        match self.groups.get_mut(&group_id) {
+            None => return Err("group does not exist".to_string()),
+            Some(group) => group.update_visibility(project_id, visibility.clone()),
         }
     }
 
-    pub async fn update_project_description(
-        identity: Principal,
+    pub fn update_project_description(
+        &mut self,
         group_id: u64,
         project_id: u64,
         description: &str,
     ) -> Result<(), String> {
-        match crate::UserStorage.write().unwrap().get_mut(&identity) {
-            None => return Err("user does not exist".to_string()),
-            Some(user) => match user.groups.get_mut(&group_id) {
-                None => return Err("group does not exist".to_string()),
-                Some(group) => {
-                    group.update_description(project_id, description)?;
-                    log!(
-                        "update_project_description",
-                        &ic_cdk::caller().to_string(),
-                        &identity.to_string(),
-                        &group_id,
-                        &project_id,
-                        description
-                    )()
-                    .await;
-                    Ok(())
-                }
-            },
+        match self.groups.get_mut(&group_id) {
+            None => return Err("group does not exist".to_string()),
+            Some(group) => group.update_description(project_id, description),
         }
     }
 
-    pub async fn get_canister_status(
-        identity: Principal,
+    pub fn get_canister_status(
+        &self,
         group_id: u64,
         project_id: u64,
         canister: Principal,
-    ) -> Result<CanisterStatusResponse, String> {
-        match crate::UserStorage.read().unwrap().get(&identity) {
-            None => return Err("user does not exist".to_string()),
-            Some(user) => match user.groups.get(&group_id) {
-                None => return Err("group does not exist".to_string()),
-                Some(group) => group.get_canister_status(project_id, canister).await,
-            },
+    ) -> Result<impl Future<Output = Result<CanisterStatusResponse, String>>, String> {
+        match self.groups.get(&group_id) {
+            None => return Err("group does not exist".to_string()),
+            Some(group) => group.get_canister_status(project_id, canister),
         }
     }
 
@@ -527,144 +354,86 @@ impl User {
         Ok(())
     }
 
-    pub async fn stop_project_canister(
-        identity: Principal,
+    pub fn stop_project_canister(
+        &self,
         group_id: u64,
         project_id: u64,
         canister: Principal,
-    ) -> Result<(), String> {
-        match crate::UserStorage.read().unwrap().get(&identity) {
-            None => return Err("user does not exist".to_string()),
-            Some(user) => match user.groups.get(&group_id) {
-                None => return Err("group does not exist".to_string()),
-                Some(group) => {
-                    group.stop_project_canister(project_id, canister).await?;
-                    log!(
-                        "stop_project_canister",
-                        &ic_cdk::caller().to_string(),
-                        &identity.to_string(),
-                        &group_id,
-                        &project_id,
-                        &canister.to_string()
-                    )()
-                    .await;
-                    Ok(())
-                }
-            },
+    ) -> Result<impl Future<Output = Result<(), String>>, String> {
+        match self.groups.get(&group_id) {
+            None => return Err("group does not exist".to_string()),
+            Some(group) => group.stop_project_canister(project_id, canister),
         }
     }
 
-    pub async fn start_project_canister(
-        identity: Principal,
+    pub fn start_project_canister(
+        &self,
         group_id: u64,
         project_id: u64,
         canister: Principal,
-    ) -> Result<(), String> {
-        match crate::UserStorage.read().unwrap().get(&identity) {
-            None => return Err("user does not exist".to_string()),
-            Some(user) => match user.groups.get(&group_id) {
-                None => return Err("group does not exist".to_string()),
-                Some(group) => {
-                    group.start_project_canister(project_id, canister).await?;
-                    log!(
-                        "start_project_canister",
-                        &ic_cdk::caller().to_string(),
-                        &identity.to_string(),
-                        &group_id,
-                        &project_id,
-                        &canister.to_string()
-                    )()
-                    .await;
-                    Ok(())
-                }
-            },
+    ) -> Result<impl Future<Output = Result<(), String>>, String> {
+        match self.groups.get(&group_id) {
+            None => return Err("group does not exist".to_string()),
+            Some(group) => group.start_project_canister(project_id, canister),
         }
     }
 
-    pub async fn delete_project_canister(
-        identity: Principal,
+    pub fn delete_project_canister(
+        &self,
         group_id: u64,
         project_id: u64,
         canister: Principal,
-    ) -> Result<(), String> {
-        match crate::UserStorage.read().unwrap().get(&identity) {
-            None => return Err("user does not exist".to_string()),
-            Some(user) => match user.groups.get(&group_id) {
-                None => return Err("group does not exist".to_string()),
-                Some(group) => {
-                    group.delete_project_canister(project_id, canister).await?;
-                    log!(
-                        "delete_project_canister",
-                        &ic_cdk::caller().to_string(),
-                        &identity.to_string(),
-                        &group_id,
-                        &project_id,
-                        &canister.to_string()
-                    )()
-                    .await;
-                    Ok(())
-                }
-            },
+    ) -> Result<impl Future<Output = Result<(), String>>, String> {
+        match self.groups.get(&group_id) {
+            None => return Err("group does not exist".to_string()),
+            Some(group) => group.delete_project_canister(project_id, canister),
         }
     }
 
-    pub async fn install_code(
-        identity: Principal,
+    pub fn install_code(
+        &self,
         group_id: u64,
         project_id: u64,
         canister: Principal,
         install_mod: InstallCodeMode,
         wasm: Vec<u8>,
         args: Vec<u8>,
-    ) -> Result<(), String> {
-        match crate::UserStorage.read().unwrap().get(&identity) {
-            None => return Err("user does not exist".to_string()),
-            Some(user) => match user.groups.get(&group_id) {
-                None => return Err("group does not exist".to_string()),
-                Some(group) => {
-                    group
-                        .install_code(project_id, canister, install_mod, wasm, args)
-                        .await
-                }
-            },
+    ) -> Result<impl Future<Output = Result<(), String>>, String> {
+        match self.groups.get(&group_id) {
+            None => return Err("group does not exist".to_string()),
+            Some(group) => group.install_code(project_id, canister, install_mod, wasm, args),
         }
     }
 
     pub fn get_project_info(
-        identity: Principal,
+        &self,
         group_id: u64,
         project_id: u64,
     ) -> Result<Option<Project>, String> {
-        match crate::UserStorage.read().unwrap().get(&identity) {
+        match self.groups.get(&group_id) {
             None => return Ok(None),
-            Some(user) => match user.groups.get(&group_id) {
-                None => return Ok(None),
-                Some(group) => group.get_project_info(project_id).map(|x| x.cloned()),
-            },
+            Some(group) => group.get_project_info(project_id).map(|x| x.cloned()),
         }
     }
 
-    pub fn get_group_info(identity: Principal, group_id: u64) -> Result<Option<Group>, String> {
-        match crate::UserStorage.read().unwrap().get(&identity) {
+    pub fn get_group_info(&self, group_id: u64) -> Result<Option<Group>, String> {
+        match self.groups.get(&group_id) {
             None => return Ok(None),
-            Some(user) => match user.groups.get(&group_id) {
-                None => return Ok(None),
-                Some(group) => match group.visibility {
-                    Profile::Public => {
-                        return Ok(Some(group.clone()));
-                    }
-                    Profile::Private => {
-                        let caller = ic_cdk::api::caller();
-                        match group.members.get(&caller) {
-                            None => {
-                                return Err("No permission".to_string());
-                            }
-                            Some(_) => {
-                                return Ok(Some(group.clone()));
-                            }
+            Some(group) => match group.visibility {
+                Profile::Public => {
+                    return Ok(Some(group.clone()));
+                }
+                Profile::Private => {
+                    let caller = ic_cdk::api::caller();
+                    match group.members.get(&caller) {
+                        None => {
+                            return Err("No permission".to_string());
+                        }
+                        Some(_) => {
+                            return Ok(Some(group.clone()));
                         }
                     }
-                },
+                }
             },
         }
     }
