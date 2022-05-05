@@ -136,6 +136,9 @@ get_project_info:
 get_group_info:
 	$(dfxManageCanister) get_group_info  '($(user),$(groupId))'
 
+upgrade:
+    dfx canister install --all --mode=upgrade
+
 test:
 	make restart \
 	&& make deploy \

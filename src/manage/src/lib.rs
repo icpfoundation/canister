@@ -34,6 +34,7 @@ lazy_static! {
     pub static ref GroupStorage: RwLock<HashMap<u64, Group>> = RwLock::new(HashMap::new());
     pub static ref UserStorage: RwLock<HashMap<Principal, User>> = RwLock::new(HashMap::new());
 }
+
 type User_Storage = HashMap<Principal, User>;
 thread_local! {
     static USER_STORAGE: RefCell<User_Storage> = RefCell::default();
@@ -544,4 +545,26 @@ pub fn get_group_info(ii: Principal, group_id: u64) -> Result<Option<Group>, Str
         }
         Some(user) => user.get_group_info(group_id),
     })
+}
+
+#[pre_upgrade]
+fn pre_upgrade() {
+    USER_STORAGE.with(|user_storage| {
+        let data_storage: Vec<(Principal, User)> = user_storage
+            .borrow()
+            .iter()
+            .map(|(k, v)| (k.clone(), v.clone()))
+            .collect();
+        ic_cdk::storage::stable_save((data_storage,)).expect("stable_save failed");
+    })
+}
+
+#[post_upgrade]
+fn post_update() {
+    let data_storage: (Vec<(Principal, User)>,) =
+        ic_cdk::storage::stable_restore().expect("data recovery failed");
+    let data_storage: User_Storage = data_storage.0.into_iter().collect();
+    USER_STORAGE.with(|user_storage| {
+        *user_storage.borrow_mut() = data_storage;
+    });
 }
