@@ -9,7 +9,7 @@ groupDescription := "test group"
 visibility := variant {Public}
 projects := vec {}
 groupMemberName := "m1"
-groupMemberAuthority :=  variant {Write}
+groupMemberAuthority :=  variant {Operational}
 groupMemberIdentity := $(user)
 groupMembers := record{0 =  $(user);1 = record { name = $(groupMemberName);authority =$(groupMemberAuthority); identity = $(groupMemberIdentity)}}
 
@@ -25,6 +25,7 @@ projectCreateTime := 1000
 projectGitRepoUrl := "*****.git"
 projectVisibility := variant {Private}
 projectInGroup := $(groupId)
+projectCanisterCycleFloor := 1000000000000
 projectMembers := record {0 = $(user); 1 = record {name = $(projectMemberName);authority = $(projectMemberAuthority);identity = $(projectMemberIdentity)}}
 projectCanisters := vec {}
 
@@ -76,6 +77,7 @@ add_project:
 	visibility = $(projectVisibility); \
 	in_group = $(projectInGroup); \
 	members = vec {$(projectMembers)}; \
+	canister_cycle_floor = $(projectCanisterCycleFloor); \
 	canisters = $(projectCanisters)})'
 
 
@@ -103,6 +105,9 @@ remove_project_canister:
 update_project_git_repo_url:
 	$(dfxManageCanister) update_project_git_repo_url  '($(user),$(groupId),$(projectId),"chaincloud.git")'
 
+update_canister_cycle_floor:
+	$(dfxManageCanister) update_canister_cycle_floor '($(user),$(groupId),$(projectId),10000000)'
+	
 update_project_visibility:
 	$(dfxManageCanister) update_project_visibility  '($(user),$(groupId),$(projectId),variant {Public})'
 
@@ -138,6 +143,7 @@ get_group_info:
 
 upgrade:
     dfx canister install --all --mode=upgrade
+
 
 test:
 	make restart \

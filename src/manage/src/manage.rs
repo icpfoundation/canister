@@ -62,7 +62,8 @@ impl ManageCanister {
 
     pub async fn get_canister_status(
         canister: Principal,
-    ) -> Result<CanisterStatusResponse, String> {
+        cycle_floor: Nat,
+    ) -> Result<(CanisterStatusResponse, Nat), String> {
         let canister_id = CanisterIdRecord {
             canister_id: canister,
         };
@@ -74,7 +75,7 @@ impl ManageCanister {
         )
         .await
         {
-            Ok((status,)) => return Ok(status),
+            Ok((status,)) => return Ok((status, cycle_floor)),
             Err((code, msg)) => {
                 return Err(format!(
                     "get_canister_status faile: {}: {}",

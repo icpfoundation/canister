@@ -24,17 +24,6 @@ use std::sync::RwLock;
 use types::Profile;
 use user::User;
 
-#[macro_use]
-extern crate lazy_static;
-
-lazy_static! {
-    pub static ref ProjectNonce: u64 = 0;
-    pub static ref GroupNonce: u64 = 0;
-    pub static ref ProjectStorage: RwLock<HashMap<u64, Project>> = RwLock::new(HashMap::new());
-    pub static ref GroupStorage: RwLock<HashMap<u64, Group>> = RwLock::new(HashMap::new());
-    pub static ref UserStorage: RwLock<HashMap<Principal, User>> = RwLock::new(HashMap::new());
-}
-
 type User_Storage = HashMap<Principal, User>;
 thread_local! {
     static USER_STORAGE: RefCell<User_Storage> = RefCell::default();
@@ -49,7 +38,7 @@ async fn get_canister_status(
     group_id: u64,
     project_id: u64,
     canister: Principal,
-) -> Result<CanisterStatusResponse, String> {
+) -> Result<(CanisterStatusResponse, Nat), String> {
     let task = USER_STORAGE.with(|user_storage| match user_storage.borrow().get(&ii) {
         None => {
             return Err("user does not exist".to_string());
@@ -362,6 +351,33 @@ pub async fn update_project_git_repo_url(
 }
 
 #[update]
+pub async fn update_canister_cycle_floor(
+    ii: Principal,
+    group_id: u64,
+    project_id: u64,
+    floor: Nat,
+) -> Result<(), String> {
+    USER_STORAGE.with(
+        |user_storage| match user_storage.borrow_mut().get_mut(&ii) {
+            None => {
+                return Err("user does not exist".to_string());
+            }
+            Some(user) => user.update_canister_cycle_floor(group_id, project_id, floor.clone()),
+        },
+    )?;
+    log!(
+        "update_canister_cycle_floor",
+        &ic_cdk::caller().to_string(),
+        &ii.to_string(),
+        &group_id,
+        &project_id,
+        floor.to_string()
+    )()
+    .await;
+    Ok(())
+}
+
+#[update]
 pub async fn update_project_visibility(
     ii: Principal,
     group_id: u64,
@@ -411,6 +427,64 @@ pub async fn update_project_description(
         &group_id,
         &project_id,
         description
+    )()
+    .await;
+    Ok(())
+}
+
+#[update]
+pub async fn update_group_member_authority(
+    ii: Principal,
+    group_id: u64,
+    member: Principal,
+    auth: Authority,
+) -> Result<(), String> {
+    USER_STORAGE.with(
+        |user_storage| match user_storage.borrow_mut().get_mut(&ii) {
+            None => {
+                return Err("user does not exist".to_string());
+            }
+            Some(user) => user.update_group_member_authority(group_id, member, auth.clone()),
+        },
+    )?;
+    log!(
+        "update_group_member_authority",
+        &ic_cdk::caller().to_string(),
+        &ii.to_string(),
+        &group_id,
+        &member.to_string(),
+        auth
+    )()
+    .await;
+    Ok(())
+}
+
+#[update]
+pub async fn update_project_member_authority(
+    ii: Principal,
+    group_id: u64,
+    project_id: u64,
+    member: Principal,
+    auth: Authority,
+) -> Result<(), String> {
+    USER_STORAGE.with(
+        |user_storage| match user_storage.borrow_mut().get_mut(&ii) {
+            None => {
+                return Err("user does not exist".to_string());
+            }
+            Some(user) => {
+                user.update_project_member_authority(group_id, project_id, member, auth.clone())
+            }
+        },
+    )?;
+    log!(
+        "update_project_member_authority",
+        &ic_cdk::caller().to_string(),
+        &ii.to_string(),
+        project_id,
+        group_id,
+        &member.to_string(),
+        auth
     )()
     .await;
     Ok(())

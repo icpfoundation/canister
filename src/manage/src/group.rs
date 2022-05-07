@@ -6,6 +6,7 @@ use crate::types::Profile;
 use candid::CandidType;
 use ic_cdk::api::caller;
 use ic_cdk::export::candid::Deserialize;
+use ic_cdk::export::candid::Nat;
 use ic_cdk::export::Principal;
 use std::collections::HashMap;
 use std::future::Future;
@@ -64,47 +65,26 @@ impl Group {
     }
 
     pub fn add_project(&mut self, project: Project) -> Result<(), String> {
-        self.identity_check(Authority::Write)?;
+        self.identity_check(Authority::Operational)?;
         self.projects.insert(project.id, project);
         Ok(())
     }
 
     pub fn remove_project(&mut self, project_id: u64) -> Result<(), String> {
-        self.identity_check(Authority::Write)?;
+        self.identity_check(Authority::Operational)?;
         self.projects.remove(&project_id);
 
         Ok(())
     }
 
     pub fn add_member(&mut self, member: Member) -> Result<(), String> {
-        self.identity_check(Authority::Write)?;
         self.members.insert(member.identity, member);
         Ok(())
     }
 
     pub fn remove_member(&mut self, member: Principal) -> Result<(), String> {
-        self.identity_check(Authority::Write)?;
         self.members.remove(&member);
         Ok(())
-    }
-
-    pub fn storage(self) -> Result<(), String> {
-        let id = self.id;
-        if !crate::GroupStorage.read().unwrap().contains_key(&id) {
-            return Err("project iD already exists".to_string());
-        }
-        crate::GroupStorage.write().unwrap().insert(id, self);
-        Ok(())
-    }
-
-    pub fn get_group_info(group_id: u64) -> Result<Group, String> {
-        match crate::GroupStorage.read().unwrap().get(&group_id) {
-            None => return Err("Group not found".to_string()),
-            Some(group) => {
-                group.identity_check(Authority::Read)?;
-                return Ok(group.clone());
-            }
-        }
     }
 
     pub fn get_group_projects_info(&self) -> Result<Option<Vec<Project>>, String> {
@@ -117,7 +97,6 @@ impl Group {
         member: Principal,
         authority: Authority,
     ) -> Result<(), String> {
-        self.identity_check(Authority::Write)?;
         match self.members.get_mut(&member) {
             None => return Err("member information not found".to_string()),
             Some(data) => {
@@ -127,10 +106,34 @@ impl Group {
         }
     }
 
+    pub fn update_project_member_authority(
+        &mut self,
+        project_id: u64,
+        member: Principal,
+        authority: Authority,
+    ) -> Result<(), String> {
+        self.identity_check(Authority::Operational)?;
+        match self.projects.get_mut(&project_id) {
+            None => Err("Project does not exist".to_string()),
+            Some(project) => project.update_member_authority(member, authority),
+        }
+    }
+
     pub fn update_git_repo_url(&mut self, project_id: u64, git: &str) -> Result<(), String> {
         match self.projects.get_mut(&project_id) {
             None => Err("Project does not exist".to_string()),
             Some(project) => project.update_git_repo_url(git),
+        }
+    }
+
+    pub fn update_canister_cycle_floor(
+        &mut self,
+        project_id: u64,
+        floor: Nat,
+    ) -> Result<(), String> {
+        match self.projects.get_mut(&project_id) {
+            None => Err("Project does not exist".to_string()),
+            Some(project) => project.update_canister_cycle_floor(floor),
         }
     }
 
@@ -153,6 +156,7 @@ impl Group {
     }
 
     pub fn add_project_member(&mut self, project_id: u64, member: Member) -> Result<(), String> {
+        self.identity_check(Authority::Operational)?;
         match self.projects.get_mut(&project_id) {
             None => Err("Project does not exist".to_string()),
             Some(project) => project.add_member(member),
@@ -164,6 +168,7 @@ impl Group {
         project_id: u64,
         member: Principal,
     ) -> Result<(), String> {
+        self.identity_check(Authority::Operational)?;
         match self.projects.get_mut(&project_id) {
             None => Err("Project does not exist".to_string()),
             Some(project) => project.remove_member(member),
@@ -175,6 +180,7 @@ impl Group {
         project_id: u64,
         canister: Principal,
     ) -> Result<(), String> {
+        self.identity_check(Authority::Operational)?;
         match self.projects.get_mut(&project_id) {
             None => Err("Project does not exist".to_string()),
             Some(project) => project.add_canister(canister),
@@ -186,6 +192,7 @@ impl Group {
         project_id: u64,
         canister: Principal,
     ) -> Result<(), String> {
+        self.identity_check(Authority::Operational)?;
         match self.projects.get_mut(&project_id) {
             None => Err("Project does not exist".to_string()),
             Some(project) => project.remove_canister(canister),
@@ -196,7 +203,7 @@ impl Group {
         &self,
         project_id: u64,
         canister: Principal,
-    ) -> Result<impl Future<Output = Result<CanisterStatusResponse, String>>, String> {
+    ) -> Result<impl Future<Output = Result<(CanisterStatusResponse, Nat), String>>, String> {
         match self.projects.get(&project_id) {
             None => Err("Project does not exist".to_string()),
             Some(project) => project.get_canister_status(canister),

@@ -20,6 +20,7 @@ type Project = record {
     git_repo_url: text;
     visibility: Profile;
     in_group: nat64;
+    canister_cycle_floor:nat;
     members:vec record { principal; Member; };
     canisters:vec principal;
 };
@@ -62,7 +63,7 @@ type CanisterStatusResponse  = record{
 };
 
 type CanisterStatusRes = variant{
-    Ok:CanisterStatusResponse;
+    Ok:record {CanisterStatusResponse;nat} ;
     Err:text;
 };
 
@@ -135,4 +136,7 @@ service :{
     install_code:(principal,nat64,nat64,principal,InstallCodeMode,blob,blob) -> (OptGroupRes);
     get_project_info:(principal,nat64,nat64) -> ( ProjectInfoRes) query;
     get_group_info:(principal,nat64) -> (GroupInfoRes) query;
+    update_group_member_authority:(principal,nat64,principal,Authority) -> (OptGroupRes);
+    update_project_member_authority:(principal,nat64,nat64,principal,Authority) -> (OptGroupRes);
+    update_canister_cycle_floor:(principal,nat64,nat64,nat) -> (OptGroupRes);
 }

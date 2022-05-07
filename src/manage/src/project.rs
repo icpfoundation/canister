@@ -19,6 +19,7 @@ pub struct Project {
     pub description: String,
     pub git_repo_url: String,
     pub members: HashMap<Principal, Member>,
+    pub canister_cycle_floor: Nat,
     pub canisters: Vec<Principal>,
 }
 
@@ -33,6 +34,7 @@ impl Project {
         git: &str,
         visibility: Profile,
         members: &[Member],
+        canister_cycle_floor: Nat,
         canisters: &[Principal],
     ) -> Self {
         let mut member: HashMap<Principal, Member> = HashMap::new();
@@ -49,6 +51,7 @@ impl Project {
             visibility: visibility,
             in_group: group,
             members: member,
+            canister_cycle_floor: canister_cycle_floor,
             canisters: canisters.to_owned(),
         }
     }
@@ -67,24 +70,12 @@ impl Project {
         }
     }
 
-    pub fn storage(self) -> Result<(), String> {
-        let id = self.id;
-        if !crate::ProjectStorage.read().unwrap().contains_key(&id) {
-            return Err("project iD already exists".to_string());
-        }
-        crate::ProjectStorage.write().unwrap().insert(id, self);
-        Ok(())
-    }
-
     pub fn add_member(&mut self, member: Member) -> Result<(), String> {
-        self.identity_check(Authority::Operational)?;
         self.members.insert(member.identity, member);
-
         Ok(())
     }
 
     pub fn remove_member(&mut self, member: Principal) -> Result<(), String> {
-        self.identity_check(Authority::Operational)?;
         self.members.remove(&member);
         Ok(())
     }
@@ -92,6 +83,11 @@ impl Project {
     pub fn update_git_repo_url(&mut self, git: &str) -> Result<(), String> {
         self.identity_check(Authority::Write)?;
         self.git_repo_url = git.to_string();
+        Ok(())
+    }
+    pub fn update_canister_cycle_floor(&mut self, floor: Nat) -> Result<(), String> {
+        self.identity_check(Authority::Write)?;
+        self.canister_cycle_floor = floor;
         Ok(())
     }
 
@@ -108,7 +104,6 @@ impl Project {
     }
 
     pub fn add_canister(&mut self, canister: Principal) -> Result<(), String> {
-        self.identity_check(Authority::Operational)?;
         if self.canisters.contains(&canister) {
             return Err("canisters already exist".to_string());
         }
@@ -117,7 +112,6 @@ impl Project {
     }
 
     pub fn remove_canister(&mut self, canister: Principal) -> Result<(), String> {
-        self.identity_check(Authority::Operational)?;
         if self.canisters.contains(&canister) {
             return Err("canisters do not exist".to_string());
         }
@@ -130,7 +124,6 @@ impl Project {
         member: Principal,
         authority: Authority,
     ) -> Result<(), String> {
-        self.identity_check(Authority::Operational)?;
         match self.members.get_mut(&member) {
             None => Err("member is not in the project".to_string()),
             Some(member) => {
@@ -143,10 +136,13 @@ impl Project {
     pub fn get_canister_status(
         &self,
         canister: Principal,
-    ) -> Result<impl Future<Output = Result<CanisterStatusResponse, String>>, String> {
+    ) -> Result<impl Future<Output = Result<(CanisterStatusResponse, Nat), String>>, String> {
         if self.canisters.contains(&canister) {
             self.identity_check(Authority::Read)?;
-            return Ok(async move { ManageCanister::get_canister_status(canister).await });
+            let canister_cycle_floor = self.canister_cycle_floor.clone();
+            return Ok(async move {
+                ManageCanister::get_canister_status(canister, canister_cycle_floor).await
+            });
         }
         return Err("canisters do not exist in the project".to_string());
     }
