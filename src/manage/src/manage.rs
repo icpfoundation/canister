@@ -3,6 +3,7 @@ use ic_cdk::export::candid::Nat;
 use ic_cdk::export::candid::{CandidType, Deserialize};
 use ic_cdk::export::Principal;
 
+use std::collections::BTreeSet;
 #[derive(CandidType, Clone, Deserialize, Debug)]
 pub struct CanisterIdRecord {
     pub canister_id: Principal,
@@ -42,6 +43,7 @@ pub struct ManageCanister {
     canister_id: Principal,
     settings: CanisterSettings,
 }
+
 impl ManageCanister {
     pub fn new(canister_id: Principal, settings: CanisterSettings) -> Self {
         Self {
@@ -77,10 +79,7 @@ impl ManageCanister {
         {
             Ok((status,)) => return Ok((status, cycle_floor)),
             Err((code, msg)) => {
-                return Err(format!(
-                    "get_canister_status faile: {}: {}",
-                    code as u8, msg
-                ));
+                return Err(msg);
             }
         }
     }

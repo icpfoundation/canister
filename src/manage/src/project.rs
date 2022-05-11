@@ -8,6 +8,7 @@ use ic_cdk::export::candid::{CandidType, Deserialize};
 use ic_cdk::export::Principal;
 use std::collections::HashMap;
 use std::future::Future;
+
 #[derive(CandidType, Debug, Deserialize, Clone)]
 pub struct Project {
     pub id: u64,
@@ -56,8 +57,8 @@ impl Project {
         }
     }
 
-    fn identity_check(&self, opt: Authority) -> Result<(), String> {
-        match self.members.get(&caller()) {
+    fn identity_check(&self, opt: Authority, sender: Principal) -> Result<(), String> {
+        match self.members.get(&sender) {
             None => {
                 return Err("not in the group member list".to_string());
             }
@@ -80,30 +81,43 @@ impl Project {
         Ok(())
     }
 
-    pub fn update_git_repo_url(&mut self, git: &str) -> Result<(), String> {
-        self.identity_check(Authority::Write)?;
+    pub fn update_git_repo_url(&mut self, git: &str, sender: Principal) -> Result<(), String> {
+        self.identity_check(Authority::Write, sender)?;
         self.git_repo_url = git.to_string();
         Ok(())
     }
-    pub fn update_canister_cycle_floor(&mut self, floor: Nat) -> Result<(), String> {
-        self.identity_check(Authority::Write)?;
+    pub fn update_canister_cycle_floor(
+        &mut self,
+        floor: Nat,
+        sender: Principal,
+    ) -> Result<(), String> {
+        self.identity_check(Authority::Write, sender)?;
         self.canister_cycle_floor = floor;
         Ok(())
     }
 
-    pub fn update_visibility(&mut self, visibility: Profile) -> Result<(), String> {
-        self.identity_check(Authority::Write)?;
+    pub fn update_visibility(
+        &mut self,
+        visibility: Profile,
+        sender: Principal,
+    ) -> Result<(), String> {
+        self.identity_check(Authority::Write, sender)?;
         self.visibility = visibility;
         Ok(())
     }
 
-    pub fn update_description(&mut self, description: &str) -> Result<(), String> {
-        self.identity_check(Authority::Write)?;
+    pub fn update_description(
+        &mut self,
+        description: &str,
+        sender: Principal,
+    ) -> Result<(), String> {
+        self.identity_check(Authority::Write, sender)?;
         self.description = description.to_string();
         Ok(())
     }
 
-    pub fn add_canister(&mut self, canister: Principal) -> Result<(), String> {
+    pub fn add_canister(&mut self, canister: Principal, sender: Principal) -> Result<(), String> {
+        self.identity_check(Authority::Write, sender)?;
         if self.canisters.contains(&canister) {
             return Err("canisters already exist".to_string());
         }
@@ -111,7 +125,12 @@ impl Project {
         Ok(())
     }
 
-    pub fn remove_canister(&mut self, canister: Principal) -> Result<(), String> {
+    pub fn remove_canister(
+        &mut self,
+        canister: Principal,
+        sender: Principal,
+    ) -> Result<(), String> {
+        self.identity_check(Authority::Write, sender)?;
         if self.canisters.contains(&canister) {
             return Err("canisters do not exist".to_string());
         }
@@ -136,9 +155,10 @@ impl Project {
     pub fn get_canister_status(
         &self,
         canister: Principal,
+        sender: Principal,
     ) -> Result<impl Future<Output = Result<(CanisterStatusResponse, Nat), String>>, String> {
         if self.canisters.contains(&canister) {
-            self.identity_check(Authority::Read)?;
+            self.identity_check(Authority::Read, sender)?;
             let canister_cycle_floor = self.canister_cycle_floor.clone();
             return Ok(async move {
                 ManageCanister::get_canister_status(canister, canister_cycle_floor).await
@@ -147,9 +167,13 @@ impl Project {
         return Err("canisters do not exist in the project".to_string());
     }
 
-    pub async fn set_canister_controller(&self, canister: Principal) -> Result<(), String> {
+    pub async fn set_canister_controller(
+        &self,
+        canister: Principal,
+        sender: Principal,
+    ) -> Result<(), String> {
         if self.canisters.contains(&canister) {
-            self.identity_check(Authority::Operational)?;
+            self.identity_check(Authority::Operational, sender)?;
             let controllers: Option<Vec<Principal>> = Some(vec![ic_cdk::api::caller()]);
             let compute_allocation: Nat = "0".parse().unwrap();
             let memory_allocation: Nat = "0".parse().unwrap();
@@ -169,9 +193,10 @@ impl Project {
     pub fn stop_canister(
         &self,
         canister: Principal,
+        sender: Principal,
     ) -> Result<impl Future<Output = Result<(), String>>, String> {
         if self.canisters.contains(&canister) {
-            self.identity_check(Authority::Operational)?;
+            self.identity_check(Authority::Operational, sender)?;
             return Ok(async move { ManageCanister::stop_canister(canister).await });
         }
         return Err("canisters do not exist in the project".to_string());
@@ -180,9 +205,10 @@ impl Project {
     pub fn start_canister(
         &self,
         canister: Principal,
+        sender: Principal,
     ) -> Result<impl Future<Output = Result<(), String>>, String> {
         if self.canisters.contains(&canister) {
-            self.identity_check(Authority::Operational)?;
+            self.identity_check(Authority::Operational, sender)?;
             return Ok(async move { ManageCanister::start_canister(canister).await });
         }
         return Err("canisters do not exist in the project".to_string());
@@ -191,9 +217,10 @@ impl Project {
     pub fn delete_canister(
         &self,
         canister: Principal,
+        sender: Principal,
     ) -> Result<impl Future<Output = Result<(), String>>, String> {
         if self.canisters.contains(&canister) {
-            self.identity_check(Authority::Operational)?;
+            self.identity_check(Authority::Operational, sender)?;
             return Ok(async move { ManageCanister::delete_canister(canister).await });
         }
         return Err("canisters do not exist in the project".to_string());
@@ -205,9 +232,10 @@ impl Project {
         install_mod: InstallCodeMode,
         wasm: Vec<u8>,
         args: Vec<u8>,
+        sender: Principal,
     ) -> Result<impl Future<Output = Result<(), String>>, String> {
         if self.canisters.contains(&canister) {
-            self.identity_check(Authority::Operational)?;
+            self.identity_check(Authority::Operational, sender)?;
             return Ok(async move {
                 ManageCanister::install_code(canister, install_mod, wasm, args).await
             });

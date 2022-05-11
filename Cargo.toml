@@ -1,6 +1,7 @@
 [workspace]
 members = [
     "src/manage",
+    "src/wallet",
     "src/test_canister",
     "src/canister_log",
 ]

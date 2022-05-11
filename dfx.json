@@ -6,6 +6,12 @@
       "wasm": "target/wasm32-unknown-unknown/release/manage.wasm",
       "type": "custom"
     },
+    "wallet": {
+      "build": "./build.sh",
+      "candid": "src/wallet/src/wallet.did",
+      "wasm": "target/wasm32-unknown-unknown/release/wallet.wasm",
+      "type": "custom"
+    },
     "test_canister": {
       "build": "./build.sh",
       "candid": "src/test_canister/src/test_canister.did",
