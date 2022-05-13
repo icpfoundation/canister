@@ -1,5 +1,6 @@
 use ic_cdk::export::candid::{CandidType, Deserialize};
 use ic_cdk::export::Principal;
+
 #[derive(CandidType, Debug, Deserialize, Clone)]
 pub struct Log {
     pub operator: Principal,
