@@ -3,7 +3,7 @@ use ic_cdk::export::candid::{CandidType, Deserialize};
 use ic_cdk_macros::*;
 use std::cell::RefCell;
 use std::collections::HashMap;
-#[derive(CandidType, Debug, Deserialize, Clone)]
+#[derive(CandidType, Debug, Deserialize, Clone, PartialEq, Eq)]
 struct Wallet {
     identity: Principal,
     describe: String,
@@ -16,11 +16,18 @@ thread_local! {
 
 #[update]
 fn add_wallet(wallet: Wallet) {
+    let caller = ic_cdk::caller();
     WALLET_STORAGE.with(|wallet_storage| {
-        if let None = wallet_storage.borrow_mut().get_mut(&ic_cdk::caller()) {
-            wallet_storage
-                .borrow_mut()
-                .insert(ic_cdk::caller(), Vec::new());
+        if let None = wallet_storage.borrow_mut().get_mut(&caller) {
+            wallet_storage.borrow_mut().insert(caller, Vec::new());
+        }
+        if wallet_storage
+            .borrow()
+            .get(&caller)
+            .unwrap()
+            .contains(&wallet)
+        {
+            return;
         }
         wallet_storage
             .borrow_mut()
