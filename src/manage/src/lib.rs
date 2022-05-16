@@ -40,6 +40,22 @@ fn init() {
     })
 }
 
+async fn authority_check(canister: Principal, ii: Principal, sender: Principal) {
+    match ManageCanister::get_canister_status(canister, Nat::default()).await {
+        Err(err) => ic_cdk::api::trap(&err),
+        Ok(status) => match status.0.settings.controllers {
+            None => {
+                ic_cdk::api::trap("ii is not a canister controller");
+            }
+            Some(controllers) => {
+                if !controllers.contains(&ii) && !controllers.contains(&sender) {
+                    ic_cdk::api::trap("no operation permission");
+                }
+            }
+        },
+    };
+}
+
 #[update]
 async fn get_canister_status(
     ii: Principal,
@@ -48,6 +64,7 @@ async fn get_canister_status(
     canister: Principal,
 ) -> Result<(CanisterStatusResponse, Nat), String> {
     let caller = ic_cdk::api::caller();
+    authority_check(canister, ii, caller).await;
     let task = USER_STORAGE.with(|user_storage| match user_storage.borrow().get(&ii) {
         None => {
             return Err("user does not exist".to_string());
@@ -320,19 +337,6 @@ async fn add_project_canister(
     canister: Principal,
 ) -> Result<(), String> {
     let caller = ic_cdk::caller();
-    match ManageCanister::get_canister_status(canister, Nat::default()).await {
-        Err(err) => {
-            assert_eq!(util::is_controller(err, ii), true);
-        }
-        Ok(status) => match status.0.settings.controllers {
-            None => {
-                ic_cdk::api::trap("ii is not a canister controller");
-            }
-            Some(controllers) => {
-                assert_eq!(controllers.contains(&ii), true);
-            }
-        },
-    };
     USER_STORAGE.with(
         |user_storage| match user_storage.borrow_mut().get_mut(&ii) {
             None => {
@@ -584,6 +588,7 @@ pub async fn start_project_canister(
     canister: Principal,
 ) -> Result<(), String> {
     let caller = ic_cdk::api::caller();
+    authority_check(canister, ii, caller).await;
     let task = USER_STORAGE.with(|user_storage| match user_storage.borrow().get(&ii) {
         None => {
             return Err("user does not exist".to_string());
@@ -612,6 +617,7 @@ pub async fn stop_project_canister(
     canister: Principal,
 ) -> Result<(), String> {
     let caller = ic_cdk::api::caller();
+    authority_check(canister, ii, caller).await;
     let task = USER_STORAGE.with(|user_storage| match user_storage.borrow().get(&ii) {
         None => {
             return Err("user does not exist".to_string());
@@ -671,6 +677,7 @@ pub async fn install_code(
     args: Vec<u8>,
 ) -> Result<(), String> {
     let caller = ic_cdk::api::caller();
+    authority_check(canister, ii, caller).await;
     let task = USER_STORAGE.with(|user_storage| match user_storage.borrow().get(&ii) {
         None => {
             return Err("user does not exist".to_string());
