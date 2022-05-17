@@ -139,4 +139,5 @@ service :{
     update_group_member_authority:(principal,nat64,principal,Authority) -> (OptGroupRes);
     update_project_member_authority:(principal,nat64,nat64,principal,Authority) -> (OptGroupRes);
     update_canister_cycle_floor:(principal,nat64,nat64,nat) -> (OptGroupRes);
+    visible_project:() -> (vec vec record{nat64;Group}) query;
 }

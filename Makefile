@@ -141,6 +141,10 @@ get_project_info:
 get_group_info:
 	$(dfxManageCanister) get_group_info  '($(user),$(groupId))'
 
+
+visible_project:
+	$(dfxManageCanister) visible_project
+
 upgrade:
     dfx canister install --all --mode=upgrade
 

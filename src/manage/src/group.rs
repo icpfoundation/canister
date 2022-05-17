@@ -66,6 +66,9 @@ impl Group {
 
     pub fn add_project(&mut self, project: Project, sender: Principal) -> Result<(), String> {
         self.identity_check(Authority::Operational, sender)?;
+        if self.projects.contains_key(&project.id) {
+            return Err("project id already exists".to_string());
+        }
         self.projects.insert(project.id, project);
         Ok(())
     }

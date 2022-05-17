@@ -86,6 +86,9 @@ impl User {
 
     pub fn add_group(&mut self, group: Group, sender: Principal) -> Result<(), String> {
         self.identity_check(sender)?;
+        if self.groups.contains_key(&group.id) {
+            return Err("group id already exists".to_string());
+        }
         self.groups.insert(group.id, group);
         Ok(())
     }
@@ -93,7 +96,6 @@ impl User {
     pub fn remove_group(&mut self, group_id: u64, sender: Principal) -> Result<(), String> {
         self.identity_check(sender)?;
         self.groups.remove(&group_id);
-
         Ok(())
     }
 
@@ -188,7 +190,7 @@ impl User {
             Some(group) => {
                 members = project.members.keys().map(|x| x.clone()).collect();
                 project_id = project.id;
-                group.add_project(project.clone(), sender);
+                group.add_project(project.clone(), sender)?;
             }
         };
         Ok(members)

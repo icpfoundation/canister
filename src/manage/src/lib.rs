@@ -86,6 +86,27 @@ fn add_user(name: String, profile: Profile) -> Result<(), String> {
     })
 }
 
+#[query]
+fn visible_project() -> Vec<Vec<(u64, Group)>> {
+    USER_STORAGE.with(|user_store| {
+        user_store
+            .borrow()
+            .iter()
+            .map(|(k, v)| {
+                v.groups
+                    .iter()
+                    .filter(|(group_id, group)| {
+                        if let Profile::Public = group.visibility {
+                            return true;
+                        }
+                        false
+                    })
+                    .map(|(group_id, group)| (*group_id, group.clone()))
+                    .collect::<Vec<(u64, Group)>>()
+            })
+            .collect::<Vec<Vec<(u64, Group)>>>()
+    })
+}
 #[update]
 async fn add_group(group: Group) -> Result<(), String> {
     let caller = ic_cdk::api::caller();
