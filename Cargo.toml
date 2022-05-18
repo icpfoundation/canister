@@ -4,4 +4,5 @@ members = [
     "src/wallet",
     "src/test_canister",
     "src/canister_log",
+    "src/image_store",
 ]

@@ -2,7 +2,7 @@ use ic_cdk::export::candid::{CandidType, Deserialize};
 use serde::Serialize;
 
 // Project permission management is similar to Linux file operation permission
-#[derive(CandidType, Debug, Deserialize, Clone, Serialize)]
+#[derive(CandidType, Debug, Deserialize, Clone, Serialize, Copy)]
 pub enum Authority {
     // You can read the basic information of groups or projects, but you cannot modify them
     Read,

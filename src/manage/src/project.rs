@@ -34,14 +34,17 @@ impl Project {
         create_by: Principal,
         git: &str,
         visibility: Profile,
-        members: &[Member],
+        members: Vec<Member>,
         canister_cycle_floor: Nat,
         canisters: &[Principal],
     ) -> Self {
-        let mut member: HashMap<Principal, Member> = HashMap::new();
-        for i in members.iter() {
-            member.insert(i.identity, i.clone());
-        }
+        let identitys = members
+            .iter()
+            .map(|v| v.identity)
+            .collect::<Vec<Principal>>();
+        let member: HashMap<Principal, Member> =
+            identitys.into_iter().zip(members.into_iter()).collect();
+
         Self {
             id: id,
             name: name.to_string(),

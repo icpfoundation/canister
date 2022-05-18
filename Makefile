@@ -145,6 +145,16 @@ get_group_info:
 visible_project:
 	$(dfxManageCanister) visible_project
 
+
+
+image_store:
+	dfx canister call image_store image_store '(principal "r7inp-6aaaa-aaaaa-aaabq-cai", "test.png",vec {0;1;2;3;4;5;6;7;8;9;10;112})' \
+	&& dfx canister call image_store image_store '(principal "r7inp-6aaaa-aaaaa-aaabq-cai", "test2.png",vec {0;1;2;3;4;5;6;7;8;9;10;112;113;114})'
+
+get_image:
+	dfx canister call image_store get_image '("test.png")' \
+	&& dfx canister call image_store get_image '("test2.png")'
+
 upgrade:
     dfx canister install --all --mode=upgrade
 

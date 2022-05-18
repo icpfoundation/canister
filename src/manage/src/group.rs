@@ -28,17 +28,20 @@ impl Group {
         visibility: Profile,
         name: &str,
         description: &str,
-        projects: &[Project],
-        members: &[Member],
+        projects: Vec<Project>,
+        members: Vec<Member>,
     ) -> Self {
-        let mut member: HashMap<Principal, Member> = HashMap::new();
-        let mut project: HashMap<u64, Project> = HashMap::new();
-        for i in members.iter() {
-            member.insert(i.identity, i.clone());
-        }
-        for i in projects.iter() {
-            project.insert(i.id, i.clone());
-        }
+        let member = members
+            .iter()
+            .map(|v| v.identity)
+            .collect::<Vec<Principal>>();
+        let member: HashMap<Principal, Member> =
+            member.into_iter().zip(members.into_iter()).collect();
+
+        let project_id = projects.iter().map(|v| v.id).collect::<Vec<u64>>();
+        let project: HashMap<u64, Project> =
+            project_id.into_iter().zip(projects.into_iter()).collect();
+
         Self {
             id: id,
             create_time: create_time,
@@ -56,8 +59,8 @@ impl Group {
                 return Err("not in the group member list".to_string());
             }
             Some(member) => {
-                if !Authority::authority_check(member.authority.clone(), opt.clone()) {
-                    return Err(format!("permission verification failed: user permissions: {:?},opt permissions: {:?}",member.authority.clone(),opt) );
+                if !Authority::authority_check(member.authority, opt) {
+                    return Err(format!("permission verification failed: user permissions: {:?},opt permissions: {:?}",member.authority,opt) );
                 }
                 Ok(())
             }

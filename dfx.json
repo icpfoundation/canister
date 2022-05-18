@@ -23,6 +23,12 @@
       "candid": "src/canister_log/src/canister_log.did",
       "wasm": "target/wasm32-unknown-unknown/release/canister_log.wasm",
       "type": "custom"
+    },
+    "image_store": {
+      "build": "./build.sh",
+      "candid": "src/image_store/src/image_store.did",
+      "wasm": "target/wasm32-unknown-unknown/release/image_store.wasm",
+      "type": "custom"
     }
   },
   "defaults": {

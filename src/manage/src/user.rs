@@ -153,7 +153,7 @@ impl User {
         match self.groups.get_mut(&group_id) {
             None => return Err("Group does not exist".to_string()),
             Some(group) => {
-                group.update_member_authority(member.clone(), auth)?;
+                group.update_member_authority(member, auth)?;
                 Ok(())
             }
         }
@@ -170,7 +170,7 @@ impl User {
         match self.groups.get_mut(&group_id) {
             None => return Err("Group does not exist".to_string()),
             Some(group) => {
-                group.update_project_member_authority(project_id, member.clone(), auth, sender)?;
+                group.update_project_member_authority(project_id, member, auth, sender)?;
                 Ok(())
             }
         }
@@ -188,7 +188,7 @@ impl User {
         match self.groups.get_mut(&group_id) {
             None => return Err("Group does not exist".to_string()),
             Some(group) => {
-                members = project.members.keys().map(|x| x.clone()).collect();
+                members = project.members.keys().map(|x| *x).collect();
                 project_id = project.id;
                 group.add_project(project.clone(), sender)?;
             }
@@ -208,7 +208,7 @@ impl User {
             None => return Err("Group does not exist".to_string()),
             Some(group) => {
                 if let Some(project) = group.projects.get(&project_id) {
-                    members = project.members.keys().map(|x| x.clone()).collect();
+                    members = project.members.keys().map(|x| *x).collect();
                 }
                 group.remove_project(project_id, sender)?;
             }
@@ -227,7 +227,7 @@ impl User {
         match self.groups.get_mut(&group_id) {
             None => return Err("Group does not exist".to_string()),
             Some(group) => {
-                group.add_member(member.clone())?;
+                group.add_member(member)?;
                 Ok(())
             }
         }
@@ -258,7 +258,7 @@ impl User {
     ) -> Result<(), String> {
         match self.groups.get_mut(&group_id) {
             None => return Err("group does not exist".to_string()),
-            Some(group) => group.add_project_member(project_id, member.clone(), sender),
+            Some(group) => group.add_project_member(project_id, member, sender),
         }
     }
 
@@ -336,7 +336,7 @@ impl User {
     ) -> Result<(), String> {
         match self.groups.get_mut(&group_id) {
             None => return Err("group does not exist".to_string()),
-            Some(group) => group.update_visibility(project_id, visibility.clone(), sender),
+            Some(group) => group.update_visibility(project_id, visibility, sender),
         }
     }
 
