@@ -112,6 +112,10 @@ type GroupInfoRes = variant{
     Ok:opt Group;
     Err:text;
 };
+type GetGroupMemberInfoRes = variant{
+    Ok:Member;
+    Err:text;
+};
 
 service :{
     get_canister_status:(principal,nat64,nat64,principal)->(CanisterStatusRes);
@@ -140,4 +144,5 @@ service :{
     update_project_member_authority:(principal,nat64,nat64,principal,Authority) -> (OptGroupRes);
     update_canister_cycle_floor:(principal,nat64,nat64,nat) -> (OptGroupRes);
     visible_project:() -> (vec vec record{nat64;Group}) query;
+    get_group_member_info:(principal,nat64,principal) -> (GetGroupMemberInfoRes) query;
 }

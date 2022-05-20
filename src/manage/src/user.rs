@@ -460,5 +460,20 @@ impl User {
         }
     }
 
-    pub fn get_group_projects_info() {}
+    pub fn get_group_member_info(
+        &self,
+        group_id: u64,
+        member: Principal,
+    ) -> Result<Member, String> {
+        match self.groups.get(&group_id) {
+            None => return Err("group does not exist".to_string()),
+            Some(group) => {
+                let res = group
+                    .members
+                    .get(&member)
+                    .ok_or("Member not found".to_string());
+                Ok(res.unwrap().clone())
+            }
+        }
+    }
 }

@@ -141,7 +141,7 @@ async fn remove_group(group_id: u64) -> Result<(), String> {
     })?;
     log!(
         &caller.to_string(),
-        "remove remove_group",
+        "remove_group",
         &caller.to_string(),
         &caller.to_string(),
         &group_id
@@ -749,6 +749,20 @@ pub fn get_group_info(ii: Principal, group_id: u64) -> Result<Option<Group>, Str
             return Err("user does not exist".to_string());
         }
         Some(user) => user.get_group_info(group_id, caller),
+    })
+}
+
+#[query]
+pub fn get_group_member_info(
+    ii: Principal,
+    group_id: u64,
+    member: Principal,
+) -> Result<Member, String> {
+    USER_STORAGE.with(|user_storage| match user_storage.borrow().get(&ii) {
+        None => {
+            return Err("user does not exist".to_string());
+        }
+        Some(user) => user.get_group_member_info(group_id, member),
     })
 }
 

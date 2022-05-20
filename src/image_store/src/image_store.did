@@ -1,6 +1,6 @@
 
 
 service:{
-    image_store:(principal,text, blob) ->();
-    get_image:(text) -> (blob) query;
+    image_store:(principal,principal,nat64, blob) ->();
+    get_image:(principal,nat64) -> (blob) query;
 }
