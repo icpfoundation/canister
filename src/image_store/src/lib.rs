@@ -45,15 +45,21 @@ enum GetGroupMemberInfoRes {
 }
 
 #[update]
-async fn image_store(canister: Principal, user: Principal, group_id: u64, data: Vec<u8>) {
+async fn image_store(
+    canister: Principal,
+    user: Principal,
+    group_id: u64,
+    data: Vec<u8>,
+) -> Result<(), String> {
     let caller = ic_cdk::api::caller();
+
     unsafe {
         let manage_canister = Principal::from_text(MANAGE_CANISTER).unwrap();
         let res: CallResult<(GetGroupMemberInfoRes,)> =
             call(canister, "get_group_member_info", (user, group_id, caller)).await;
         if let GetGroupMemberInfoRes::Ok(member) = res.unwrap().0 {
-            if let Authority::Write = member.authority {
-                IMAGE_STORAGE.with(|image_store| {
+            return match member.authority {
+                Authority::Write | Authority::Operational => IMAGE_STORAGE.with(|image_store| {
                     image_store
                         .borrow_mut()
                         .entry(user)
@@ -64,7 +70,7 @@ async fn image_store(canister: Principal, user: Principal, group_id: u64, data: 
                         .unwrap()
                         .contains_key(&group_id)
                     {
-                        ic_cdk::trap("pictures have been stored");
+                        return Err("pictures have been stored".to_string());
                     }
 
                     let size = data.len() as u64;
@@ -89,9 +95,12 @@ async fn image_store(canister: Principal, user: Principal, group_id: u64, data: 
                             .unwrap()
                             .insert(group_id, image);
                     }
-                });
-            }
+                    Ok(())
+                }),
+                _ => Err("insufficient permissions".to_string()),
+            };
         }
+        Err("failed to call get_group_member_info".to_string())
     }
 }
 

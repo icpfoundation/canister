@@ -76,6 +76,7 @@ async fn get_canister_status(
 
 #[update]
 fn add_user(name: String, profile: Profile) -> Result<(), String> {
+    ic_cdk::print(ic_cdk::caller().to_string());
     USER_STORAGE.with(|user_storage| {
         if let Some(_) = user_storage.borrow().get(&ic_cdk::caller()) {
             return Err("User already exists".to_string());
@@ -87,7 +88,7 @@ fn add_user(name: String, profile: Profile) -> Result<(), String> {
 }
 
 #[query]
-fn visible_project() -> Vec<Vec<(u64, Group)>> {
+fn visible_project() -> Vec<Vec<(Principal, u64, Group)>> {
     USER_STORAGE.with(|user_store| {
         user_store
             .borrow()
@@ -101,10 +102,10 @@ fn visible_project() -> Vec<Vec<(u64, Group)>> {
                         }
                         false
                     })
-                    .map(|(group_id, group)| (*group_id, group.clone()))
-                    .collect::<Vec<(u64, Group)>>()
+                    .map(|(group_id, group)| (*k, *group_id, group.clone()))
+                    .collect::<Vec<(Principal, u64, Group)>>()
             })
-            .collect::<Vec<Vec<(u64, Group)>>>()
+            .collect::<Vec<Vec<(Principal, u64, Group)>>>()
     })
 }
 #[update]
