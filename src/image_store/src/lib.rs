@@ -26,6 +26,7 @@ pub struct Member {
     pub name: String,
     pub authority: Authority,
     pub identity: Principal,
+    pub join_time: u64,
 }
 // Project permission management is similar to Linux file operation permission
 #[derive(CandidType, Debug, Deserialize)]
