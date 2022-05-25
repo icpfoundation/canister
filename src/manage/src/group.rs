@@ -236,7 +236,9 @@ impl Group {
     ) -> Result<impl Future<Output = Result<(CanisterStatusResponse, Nat), String>>, String> {
         match self.projects.get(&project_id) {
             None => Err("Project does not exist".to_string()),
-            Some(project) => project.get_canister_status(canister, sender),
+            Some(project) => {
+                project.get_canister_status(canister, sender, Profile::Private == self.visibility)
+            }
         }
     }
 

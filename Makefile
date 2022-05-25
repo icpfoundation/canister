@@ -43,7 +43,7 @@ deploy:
 	dfx deploy
 	
 set_controller:
-	dfx canister --wallet $$(dfx identity get-wallet) update-settings --all --controller ryjl3-tyaaa-aaaaa-aaaba-cai
+	dfx canister --wallet $$(dfx identity get-wallet) update-settings --all --controller r7inp-6aaaa-aaaaa-aaabq-cai
 
 get_canister_status:
 	$(dfxManageCanister) get_canister_status '($(user),$(groupId),$(projectId),$(projectCanister))'

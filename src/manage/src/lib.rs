@@ -64,7 +64,6 @@ async fn get_canister_status(
     canister: Principal,
 ) -> Result<(CanisterStatusResponse, Nat), String> {
     let caller = ic_cdk::api::caller();
-    authority_check(canister, ii, caller).await;
     let task = USER_STORAGE.with(|user_storage| match user_storage.borrow().get(&ii) {
         None => {
             return Err("user does not exist".to_string());

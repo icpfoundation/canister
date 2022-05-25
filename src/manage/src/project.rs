@@ -159,9 +159,12 @@ impl Project {
         &self,
         canister: Principal,
         sender: Principal,
+        check: bool,
     ) -> Result<impl Future<Output = Result<(CanisterStatusResponse, Nat), String>>, String> {
         if self.canisters.contains(&canister) {
-            self.identity_check(Authority::Read, sender)?;
+            if check {
+                self.identity_check(Authority::Read, sender)?;
+            }
             let canister_cycle_floor = self.canister_cycle_floor.clone();
             return Ok(async move {
                 ManageCanister::get_canister_status(canister, canister_cycle_floor).await
