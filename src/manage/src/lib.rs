@@ -124,7 +124,6 @@ async fn add_group(account: Principal, group: Group) -> Result<(), String> {
         group.id,
         &caller.to_string(),
         "add_group",
-        &caller.to_string(),
         &group
     )()
     .await;
@@ -147,8 +146,6 @@ async fn remove_group(account: Principal, group_id: u64) -> Result<(), String> {
         group_id,
         &caller.to_string(),
         "remove_group",
-        &caller.to_string(),
-        &caller.to_string(),
         &group_id
     )()
     .await;
@@ -195,7 +192,6 @@ async fn add_project(account: Principal, group_id: u64, project: Project) -> Res
         group_id,
         &caller.to_string(),
         "add_project",
-        &caller.to_string(),
         &project
     )()
     .await;
@@ -232,7 +228,6 @@ async fn remove_project(account: Principal, group_id: u64, project_id: u64) -> R
         group_id,
         &caller.to_string(),
         "remove_project",
-        &caller.to_string(),
         &project_id
     )()
     .await;
@@ -256,7 +251,6 @@ async fn add_group_member(account: Principal, group_id: u64, member: Member) -> 
         group_id,
         &caller.to_string(),
         "add_group_member",
-        &caller.to_string(),
         &member
     )()
     .await;
@@ -284,7 +278,6 @@ async fn remove_group_member(
         group_id,
         &caller.to_string(),
         "remove_group_member",
-        &caller.to_string(),
         &member
     )()
     .await;
@@ -321,8 +314,6 @@ async fn add_project_member(
         group_id,
         &caller.to_string(),
         "add_project_member",
-        &caller.to_string(),
-        &account.to_string(),
         &group_id,
         &project_id,
         &member
@@ -361,8 +352,6 @@ async fn remove_project_member(
         group_id,
         &caller.to_string(),
         "remove_project_member",
-        &caller.to_string(),
-        &account.to_string(),
         &group_id,
         &project_id,
         &member
@@ -393,8 +382,6 @@ async fn add_project_canister(
         group_id,
         &caller.to_string(),
         "add_project_canister",
-        &caller.to_string(),
-        &account.to_string(),
         &group_id,
         &project_id,
         &canister.to_string()
@@ -425,8 +412,6 @@ async fn remove_project_canister(
         group_id,
         &caller.to_string(),
         "remove_project_canister",
-        &ic_cdk::caller().to_string(),
-        &account.to_string(),
         &group_id,
         &project_id,
         &canister.to_string()
@@ -456,8 +441,6 @@ pub async fn update_project_git_repo_url(
         group_id,
         &caller.to_string(),
         "update_project_git_repo_url",
-        &caller.to_string(),
-        &account.to_string(),
         &group_id,
         &project_id,
         git
@@ -489,8 +472,6 @@ pub async fn update_canister_cycle_floor(
         group_id,
         &caller.to_string(),
         "update_canister_cycle_floor",
-        &caller.to_string(),
-        &account.to_string(),
         &group_id,
         &project_id,
         floor.to_string()
@@ -523,8 +504,6 @@ pub async fn update_project_visibility(
         group_id,
         &caller.to_string(),
         "update_project_visibility",
-        &caller.to_string(),
-        &account.to_string(),
         &group_id,
         &project_id,
         &visibility
@@ -556,8 +535,6 @@ pub async fn update_project_description(
         group_id,
         &caller.to_string(),
         "update_project_description",
-        &caller.to_string(),
-        &account.to_string(),
         &group_id,
         &project_id,
         description
@@ -589,8 +566,6 @@ pub async fn update_group_member_authority(
         group_id,
         &caller.to_string(),
         "update_group_member_authority",
-        &caller.to_string(),
-        &account.to_string(),
         &group_id,
         &member.to_string(),
         auth
@@ -627,8 +602,6 @@ pub async fn update_project_member_authority(
         group_id,
         &caller.to_string(),
         "update_project_member_authority",
-        &caller.to_string(),
-        &account.to_string(),
         project_id,
         group_id,
         &member.to_string(),
@@ -694,8 +667,6 @@ pub async fn start_project_canister(
         group_id,
         &caller.to_string(),
         "start_project_canister",
-        &caller.to_string(),
-        &account.to_string(),
         &group_id,
         &project_id,
         &canister.to_string()
@@ -725,8 +696,6 @@ pub async fn stop_project_canister(
         group_id,
         &caller.to_string(),
         "stop_project_canister",
-        &caller.to_string(),
-        &account.to_string(),
         &group_id,
         &project_id,
         &canister.to_string()
@@ -796,8 +765,6 @@ pub async fn install_code(
         group_id,
         &caller.to_string(),
         "install_code",
-        &ic_cdk::caller().to_string(),
-        &account.to_string(),
         &group_id,
         &project_id,
         &canister.to_string()
