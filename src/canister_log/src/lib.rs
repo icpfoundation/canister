@@ -47,16 +47,20 @@ fn create_log(user: Principal, group_id: u64, operator: Principal, log: Vec<u8>)
 }
 
 #[query]
-fn get_log(user: Principal, group_id: u64, page: u64) -> Option<Vec<Vec<String>>> {
+fn get_log(
+    account: Principal,
+    group_id: u64,
+    page: u64,
+) -> Option<Vec<(Principal, u64, Vec<String>)>> {
     let user = User {
-        identity: user,
+        identity: account,
         group_id: group_id,
     };
     LOG_STORAGE.with(|log_storage| {
         if let None = log_storage.borrow().get(&user) {
             return None;
         }
-        let result: Vec<Vec<String>> = log_storage
+        let result: Vec<(Principal, u64, Vec<String>)> = log_storage
             .borrow()
             .get(&user)
             .unwrap()
@@ -64,8 +68,8 @@ fn get_log(user: Principal, group_id: u64, page: u64) -> Option<Vec<Vec<String>>
             .unwrap()
             .iter()
             .map(|x| {
-                let res = rlp::decode_list::<String>(&x.info);
-                res
+                let info = rlp::decode_list::<String>(&x.info);
+                (x.operator, x.create_time, info)
             })
             .collect();
         Some(result)

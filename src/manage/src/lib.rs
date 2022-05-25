@@ -639,7 +639,7 @@ pub async fn update_project_member_authority(
 }
 
 #[update]
-fn update_group_name_and_description_and_visibility(
+async fn update_group_name_and_description_and_visibility(
     account: Principal,
     group_id: u64,
     name: String,
@@ -654,13 +654,23 @@ fn update_group_name_and_description_and_visibility(
             }
             Some(user) => user.update_group_name_and_description_and_visibility(
                 group_id,
-                name,
-                description,
+                name.clone(),
+                description.clone(),
                 visibility,
                 caller,
             ),
         },
-    )
+    )?;
+    log!(
+        &account.to_string(),
+        group_id,
+        &caller.to_string(),
+        "update_group_info",
+        &name,
+        &description
+    )()
+    .await;
+    Ok(())
 }
 
 #[update]
