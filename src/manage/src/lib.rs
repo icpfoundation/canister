@@ -639,6 +639,31 @@ pub async fn update_project_member_authority(
 }
 
 #[update]
+fn update_group_name_and_description_and_visibility(
+    account: Principal,
+    group_id: u64,
+    name: String,
+    description: String,
+    visibility: Profile,
+) -> Result<(), String> {
+    let caller = ic_cdk::api::caller();
+    USER_STORAGE.with(
+        |user_storage| match user_storage.borrow_mut().get_mut(&account) {
+            None => {
+                return Err("user does not exist".to_string());
+            }
+            Some(user) => user.update_group_name_and_description_and_visibility(
+                group_id,
+                name,
+                description,
+                visibility,
+                caller,
+            ),
+        },
+    )
+}
+
+#[update]
 pub async fn start_project_canister(
     account: Principal,
     group_id: u64,
