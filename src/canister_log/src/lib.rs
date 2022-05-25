@@ -3,23 +3,34 @@ use ic_cdk_macros::*;
 use std::collections::{BTreeMap, HashMap};
 use std::sync::RwLock;
 mod log;
+use ic_cdk::export::candid::{CandidType, Deserialize};
 use log::Log;
 use std::cell::RefCell;
-type Log_Storage = HashMap<Principal, BTreeMap<u64, Vec<Log>>>;
+use std::hash::Hash;
+#[derive(Hash, PartialEq, Eq, Clone, CandidType, Debug, Deserialize)]
+struct User {
+    identity: Principal,
+    group_id: u64,
+}
+type Log_Storage = HashMap<User, BTreeMap<u64, Vec<Log>>>;
 const PAGE_SIZE: usize = 20;
 thread_local! {
     static LOG_STORAGE: RefCell<Log_Storage> = RefCell::default();
 }
 
 #[update]
-fn create_log(operator: Principal, log: Vec<u8>) {
+fn create_log(user: Principal, group_id: u64, operator: Principal, log: Vec<u8>) {
+    let user = User {
+        identity: user,
+        group_id: group_id,
+    };
     let new_log = log::Log::new(operator, log);
     LOG_STORAGE.with(|log_storage| {
         let mut storage = log_storage.borrow_mut();
-        match storage.get_mut(&operator) {
+        match storage.get_mut(&user) {
             None => {
-                storage.insert(operator, BTreeMap::new());
-                storage.get_mut(&operator).unwrap().insert(1, vec![new_log]);
+                storage.insert(user.clone(), BTreeMap::new());
+                storage.get_mut(&user).unwrap().insert(1, vec![new_log]);
             }
             Some(data) => {
                 let page_size = data.len() as u64;
@@ -36,14 +47,18 @@ fn create_log(operator: Principal, log: Vec<u8>) {
 }
 
 #[query]
-fn get_log(operator: Principal, page: u64) -> Option<Vec<Vec<String>>> {
+fn get_log(user: Principal, group_id: u64, page: u64) -> Option<Vec<Vec<String>>> {
+    let user = User {
+        identity: user,
+        group_id: group_id,
+    };
     LOG_STORAGE.with(|log_storage| {
-        if let None = log_storage.borrow().get(&operator) {
+        if let None = log_storage.borrow().get(&user) {
             return None;
         }
         let result: Vec<Vec<String>> = log_storage
             .borrow()
-            .get(&operator)
+            .get(&user)
             .unwrap()
             .get(&page)
             .unwrap()
@@ -60,7 +75,7 @@ fn get_log(operator: Principal, page: u64) -> Option<Vec<Vec<String>>> {
 #[pre_upgrade]
 fn pre_upgrade() {
     LOG_STORAGE.with(|log_storage| {
-        let data_storage: Vec<(Principal, Vec<(u64, Vec<Log>)>)> = log_storage
+        let data_storage: Vec<(User, Vec<(u64, Vec<Log>)>)> = log_storage
             .borrow()
             .iter()
             .map(|(k, v)| {
@@ -76,9 +91,9 @@ fn pre_upgrade() {
 
 #[post_upgrade]
 fn post_update() {
-    let data_storage: (Vec<(Principal, Vec<(u64, Vec<Log>)>)>,) =
+    let data_storage: (Vec<(User, Vec<(u64, Vec<Log>)>)>,) =
         ic_cdk::storage::stable_restore().expect("data recovery failed");
-    let data_storage: Vec<(Principal, BTreeMap<u64, Vec<Log>>)> = data_storage
+    let data_storage: Vec<(User, BTreeMap<u64, Vec<Log>>)> = data_storage
         .0
         .iter()
         .map(|(k, v)| (k.clone(), v.clone().into_iter().collect()))

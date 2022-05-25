@@ -11,7 +11,7 @@ projects := vec {}
 groupMemberName := "m1"
 groupMemberAuthority :=  variant {Operational}
 groupMemberIdentity := $(user)
-groupMembers := record{0 =  $(user);1 = record { name = $(groupMemberName);authority =$(groupMemberAuthority); identity = $(groupMemberIdentity)}}
+groupMembers := record{0 =  $(user);1 = record { name = $(groupMemberName);authority =$(groupMemberAuthority); identity = $(groupMemberIdentity);join_time = 0}}
 
 projectMemberName := "member1"
 projectMemberAuthority := variant {Operational}
@@ -26,7 +26,7 @@ projectGitRepoUrl := "*****.git"
 projectVisibility := variant {Private}
 projectInGroup := $(groupId)
 projectCanisterCycleFloor := 1000000000000
-projectMembers := record {0 = $(user); 1 = record {name = $(projectMemberName);authority = $(projectMemberAuthority);identity = $(projectMemberIdentity)}}
+projectMembers := record {0 = $(user); 1 = record {name = $(projectMemberName);authority = $(projectMemberAuthority);identity = $(projectMemberIdentity);join_time = 0}}
 projectCanisters := vec {}
 
 projectCanister := principal "r7inp-6aaaa-aaaaa-aaabq-cai"
@@ -55,7 +55,7 @@ get_user_info:
 	$(dfxManageCanister) get_user_info '($(user))'
 
 add_group:
-	$(dfxManageCanister) add_group '(record {id = $(groupId); \
+	$(dfxManageCanister) add_group '($(user), record {id = $(groupId); \
 	create_time=$(createTime); \
 	name=$(groupName); \
 	description=$(groupDescription); \
@@ -64,10 +64,10 @@ add_group:
 	members = vec {$(groupMembers)}})'
 
 remove_group:
-	$(dfxManageCanister) remove_group '($(groupId))'
+	$(dfxManageCanister) remove_group '($(user),$(groupId))'
 
 add_project:
-	$(dfxManageCanister) add_project '($(groupId),\
+	$(dfxManageCanister) add_project '($(user),$(groupId),\
 	record {id=$(projectId); \
 	name=$(projectName); \
 	description=$(projectDescription); \
