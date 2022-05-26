@@ -19,6 +19,7 @@ thread_local! {
 struct Image {
     pub size: u64,
     pub ptr: u64,
+    pub max_size: u64,
 }
 
 #[derive(CandidType, Debug, Deserialize)]
@@ -61,20 +62,25 @@ async fn image_store(
         if let GetGroupMemberInfoRes::Ok(member) = res.unwrap().0 {
             return match member.authority {
                 Authority::Write | Authority::Operational => IMAGE_STORAGE.with(|image_store| {
+                    let size = data.len() as u64;
                     image_store
                         .borrow_mut()
                         .entry(user)
                         .or_insert(HashMap::new());
-                    if image_store
-                        .borrow()
-                        .get(&user)
+                    if let Some(image_info) = image_store
+                        .borrow_mut()
+                        .get_mut(&user)
                         .unwrap()
-                        .contains_key(&group_id)
+                        .get_mut(&group_id)
                     {
-                        return Err("pictures have been stored".to_string());
+                        if image_info.max_size < size {
+                            return Err("the picture is too big".to_string());
+                        }
+                        stable64_write(image_info.ptr, &data);
+                        image_info.size = size;
+                        return Ok(());
                     }
 
-                    let size = data.len() as u64;
                     unsafe {
                         if Ptr + size > Page * PAGE_SIZE {
                             let page = (Ptr + size) / PAGE_SIZE + 1;
@@ -87,6 +93,7 @@ async fn image_store(
                         let image = Image {
                             ptr: Ptr,
                             size: size,
+                            max_size: size,
                         };
                         stable64_write(Ptr, &data);
                         Ptr = Ptr + size;
