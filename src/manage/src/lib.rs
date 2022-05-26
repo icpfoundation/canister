@@ -23,7 +23,7 @@ use std::cell::RefCell;
 use std::future::Future;
 use std::pin::Pin;
 use std::sync::RwLock;
-use types::Profile;
+use types::{Action, Profile};
 use user::User;
 
 type User_Storage = HashMap<Principal, User>;
@@ -122,7 +122,7 @@ async fn add_group(account: Principal, group: Group) -> Result<(), String> {
         &account.to_string(),
         group.id,
         &caller.to_string(),
-        "add_group",
+        Action::UpdateGroup(group.id, "add_group".to_string()),
         &group
     )()
     .await;
@@ -144,7 +144,7 @@ async fn remove_group(account: Principal, group_id: u64) -> Result<(), String> {
         &account.to_string(),
         group_id,
         &caller.to_string(),
-        "remove_group",
+        Action::UpdateGroup(group_id, "remove_group".to_string()),
         &group_id
     )()
     .await;
@@ -190,7 +190,7 @@ async fn add_project(account: Principal, group_id: u64, project: Project) -> Res
         &account.to_string(),
         group_id,
         &caller.to_string(),
-        "add_project",
+        Action::UpdateProject(group_id, project.id, "add_project".to_string()),
         &project
     )()
     .await;
@@ -226,7 +226,7 @@ async fn remove_project(account: Principal, group_id: u64, project_id: u64) -> R
         &account.to_string(),
         group_id,
         &caller.to_string(),
-        "remove_project",
+        Action::UpdateProject(group_id, project_id, "remove_project".to_string()),
         &project_id
     )()
     .await;
@@ -249,7 +249,7 @@ async fn add_group_member(account: Principal, group_id: u64, member: Member) -> 
         &account.to_string(),
         group_id,
         &caller.to_string(),
-        "add_group_member",
+        Action::UpdateGroup(group_id, "add_group_member".to_string()),
         &member
     )()
     .await;
@@ -276,7 +276,7 @@ async fn remove_group_member(
         &account.to_string(),
         group_id,
         &caller.to_string(),
-        "remove_group_member",
+        Action::UpdateGroup(group_id, "remove_group_member".to_string()),
         &member
     )()
     .await;
@@ -312,9 +312,7 @@ async fn add_project_member(
         &account.to_string(),
         group_id,
         &caller.to_string(),
-        "add_project_member",
-        &group_id,
-        &project_id,
+        Action::UpdateProject(group_id, project_id, "add_project_member".to_string()),
         &member
     )()
     .await;
@@ -350,7 +348,7 @@ async fn remove_project_member(
         &account.to_string(),
         group_id,
         &caller.to_string(),
-        "remove_project_member",
+        Action::UpdateProject(group_id, project_id, "remove_project_member".to_string()),
         &group_id,
         &project_id,
         &member
@@ -380,9 +378,7 @@ async fn add_project_canister(
         &account.to_string(),
         group_id,
         &caller.to_string(),
-        "add_project_canister",
-        &group_id,
-        &project_id,
+        Action::UpdateProjectCanister(group_id, project_id, "add_project_canister".to_string()),
         &canister.to_string()
     )()
     .await;
@@ -410,9 +406,7 @@ async fn remove_project_canister(
         &account.to_string(),
         group_id,
         &caller.to_string(),
-        "remove_project_canister",
-        &group_id,
-        &project_id,
+        Action::UpdateProjectCanister(group_id, project_id, "remove_project_canister".to_string()),
         &canister.to_string()
     )()
     .await;
@@ -439,9 +433,11 @@ pub async fn update_project_git_repo_url(
         &account.to_string(),
         group_id,
         &caller.to_string(),
-        "update_project_git_repo_url",
-        &group_id,
-        &project_id,
+        Action::UpdateProject(
+            group_id,
+            project_id,
+            "update_project_git_repo_url".to_string()
+        ),
         git
     )()
     .await;
@@ -470,9 +466,11 @@ pub async fn update_canister_cycle_floor(
         &account.to_string(),
         group_id,
         &caller.to_string(),
-        "update_canister_cycle_floor",
-        &group_id,
-        &project_id,
+        Action::UpdateProject(
+            group_id,
+            project_id,
+            "update_canister_cycle_floor".to_string()
+        ),
         floor.to_string()
     )()
     .await;
@@ -502,9 +500,11 @@ pub async fn update_project_visibility(
         &account.to_string(),
         group_id,
         &caller.to_string(),
-        "update_project_visibility",
-        &group_id,
-        &project_id,
+        Action::UpdateProject(
+            group_id,
+            project_id,
+            "update_project_visibility".to_string()
+        ),
         &visibility
     )()
     .await;
@@ -533,9 +533,11 @@ pub async fn update_project_description(
         &account.to_string(),
         group_id,
         &caller.to_string(),
-        "update_project_description",
-        &group_id,
-        &project_id,
+        Action::UpdateProject(
+            group_id,
+            project_id,
+            "update_project_description".to_string()
+        ),
         description
     )()
     .await;
@@ -564,8 +566,7 @@ pub async fn update_group_member_authority(
         &account.to_string(),
         group_id,
         &caller.to_string(),
-        "update_group_member_authority",
-        &group_id,
+        Action::UpdateGroup(group_id, "update_group_member_authority".to_string()),
         &member.to_string(),
         auth
     )()
@@ -600,9 +601,11 @@ pub async fn update_project_member_authority(
         &account.to_string(),
         group_id,
         &caller.to_string(),
-        "update_project_member_authority",
-        project_id,
-        group_id,
+        Action::UpdateProject(
+            group_id,
+            project_id,
+            "update_project_member_authority".to_string()
+        ),
         &member.to_string(),
         auth
     )()
@@ -637,7 +640,7 @@ async fn update_group_name_and_description_and_visibility(
         &account.to_string(),
         group_id,
         &caller.to_string(),
-        "update_group_info",
+        Action::UpdateGroup(group_id, "update_group_info".to_string()),
         &name,
         &description
     )()
@@ -665,9 +668,7 @@ pub async fn start_project_canister(
         &account.to_string(),
         group_id,
         &caller.to_string(),
-        "start_project_canister",
-        &group_id,
-        &project_id,
+        Action::UpdateProjectCanister(group_id, project_id, "start_project_canister".to_string()),
         &canister.to_string()
     )()
     .await;
@@ -694,9 +695,7 @@ pub async fn stop_project_canister(
         &account.to_string(),
         group_id,
         &caller.to_string(),
-        "stop_project_canister",
-        &group_id,
-        &project_id,
+        Action::UpdateProjectCanister(group_id, project_id, "stop_project_canister".to_string()),
         &canister.to_string()
     )()
     .await;
@@ -705,13 +704,14 @@ pub async fn stop_project_canister(
 
 #[update]
 pub async fn delete_project_canister(
-    ii: Principal,
+    account: Principal,
     group_id: u64,
     project_id: u64,
     canister: Principal,
 ) -> Result<(), String> {
     let caller = ic_cdk::api::caller();
-    let task = USER_STORAGE.with(|user_storage| match user_storage.borrow().get(&ii) {
+    authority_check(canister, account, caller).await;
+    let task = USER_STORAGE.with(|user_storage| match user_storage.borrow().get(&account) {
         None => {
             return Err("user does not exist".to_string());
         }
@@ -719,13 +719,10 @@ pub async fn delete_project_canister(
     })?;
     futures::join!(task);
     log!(
-        &caller.to_string(),
+        &account.to_string(),
         group_id,
-        "delete_project_canister",
         &caller.to_string(),
-        &ii.to_string(),
-        &group_id,
-        &project_id,
+        Action::UpdateProjectCanister(group_id, project_id, "delete_project_canister".to_string()),
         &canister.to_string()
     )()
     .await;
@@ -763,9 +760,7 @@ pub async fn install_code(
         &account.to_string(),
         group_id,
         &caller.to_string(),
-        "install_code",
-        &group_id,
-        &project_id,
+        Action::UpdateProjectCanister(group_id, project_id, "install_code".to_string()),
         &canister.to_string()
     )()
     .await;

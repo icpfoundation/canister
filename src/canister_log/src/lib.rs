@@ -19,12 +19,18 @@ thread_local! {
 }
 
 #[update]
-fn create_log(user: Principal, group_id: u64, operator: Principal, log: Vec<u8>) {
+fn create_log(
+    user: Principal,
+    group_id: u64,
+    operator: Principal,
+    action: log::Action,
+    log: Vec<u8>,
+) {
     let user = User {
         identity: user,
         group_id: group_id,
     };
-    let new_log = log::Log::new(operator, log);
+    let new_log = log::Log::new(operator, action, log);
     LOG_STORAGE.with(|log_storage| {
         let mut storage = log_storage.borrow_mut();
         match storage.get_mut(&user) {
@@ -51,7 +57,7 @@ fn get_log(
     account: Principal,
     group_id: u64,
     page: u64,
-) -> Option<Vec<(Principal, u64, Vec<String>)>> {
+) -> Option<Vec<(Principal, u64, log::Action, Vec<String>)>> {
     let user = User {
         identity: account,
         group_id: group_id,
@@ -60,7 +66,7 @@ fn get_log(
         if let None = log_storage.borrow().get(&user) {
             return None;
         }
-        let result: Vec<(Principal, u64, Vec<String>)> = log_storage
+        let result: Vec<(Principal, u64, log::Action, Vec<String>)> = log_storage
             .borrow()
             .get(&user)
             .unwrap()
@@ -69,7 +75,7 @@ fn get_log(
             .iter()
             .map(|x| {
                 let info = rlp::decode_list::<String>(&x.info);
-                (x.operator, x.create_time, info)
+                (x.operator, x.create_time, x.action.clone(), info)
             })
             .collect();
         Some(result)

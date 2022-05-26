@@ -1,7 +1,7 @@
 use ic_cdk::export::Principal;
 #[macro_export]
 macro_rules!  log{
-    ($user:expr,$group_id:expr,$sender:expr,$($x:expr),*) =>  {
+    ($user:expr,$group_id:expr,$sender:expr,$action:expr, $($x:expr),*) =>  {
         || async  {
             let mut data:Vec<String> = Vec::new();
             $(
@@ -14,7 +14,7 @@ macro_rules!  log{
                 let user = Principal::from_text($user).unwrap();
                 let sender = Principal::from_text($sender).unwrap();
                 let group_id:u64 = $group_id.try_into().unwrap();
-                let res:ic_cdk::api::call::CallResult<()> =  ic_cdk::api::call::call(log_canister,"create_log",(&user,&group_id,&sender,&res.to_vec(),)).await;
+                let res:ic_cdk::api::call::CallResult<()> =  ic_cdk::api::call::call(log_canister,"create_log",(&user,&group_id,&sender,$action,&res.to_vec(),)).await;
             }
             }
     };
