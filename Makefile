@@ -28,7 +28,7 @@ projectInGroup := $(groupId)
 projectCanisterCycleFloor := 1000000000000
 projectMembers := record {0 = $(user); 1 = record {name = $(projectMemberName);authority = $(projectMemberAuthority);identity = $(projectMemberIdentity);join_time = 0}}
 projectCanisters := vec {}
-
+projectType := variant {Wallet}
 projectCanister := principal "r7inp-6aaaa-aaaaa-aaabq-cai"
 
 
@@ -78,7 +78,8 @@ add_project:
 	in_group = $(projectInGroup); \
 	members = vec {$(projectMembers)}; \
 	canister_cycle_floor = $(projectCanisterCycleFloor); \
-	canisters = $(projectCanisters)})'
+	canisters = $(projectCanisters); \
+	function = $(projectType)})'
 
 
 add_project_member:

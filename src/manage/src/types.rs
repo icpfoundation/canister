@@ -11,3 +11,19 @@ pub enum Action {
     UpdateProject(u64, u64, String),
     UpdateProjectCanister(u64, u64, String),
 }
+#[derive(CandidType, Debug, Deserialize, Clone)]
+pub enum ProjectType {
+    Wallet,
+    Infrastructure,
+    NFT,
+    Authentication,
+    Tools,
+    Dapp,
+    Sns,
+    Defi,
+    Games,
+    Official,
+    Bridge,
+    Swap,
+    Metaverse,
+}

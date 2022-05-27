@@ -2,12 +2,30 @@ use crate::authority::Authority;
 use crate::manage::{CanisterSettings, CanisterStatusResponse, InstallCodeMode, ManageCanister};
 use crate::member::Member;
 use crate::types::Profile;
+
 use ic_cdk::api::caller;
 use ic_cdk::export::candid::Nat;
 use ic_cdk::export::candid::{CandidType, Deserialize};
 use ic_cdk::export::Principal;
 use std::collections::HashMap;
 use std::future::Future;
+
+#[derive(CandidType, Debug, Deserialize, Clone)]
+pub enum ProjectType {
+    Wallet,
+    Infrastructure,
+    NFT,
+    Authentication,
+    Tools,
+    Dapp,
+    Sns,
+    Defi,
+    Games,
+    Official,
+    Bridge,
+    Swap,
+    Metaverse,
+}
 
 #[derive(CandidType, Debug, Deserialize, Clone)]
 pub struct Project {
@@ -22,6 +40,7 @@ pub struct Project {
     pub members: HashMap<Principal, Member>,
     pub canister_cycle_floor: Nat,
     pub canisters: Vec<Principal>,
+    pub function: ProjectType,
 }
 
 impl Project {
@@ -37,6 +56,7 @@ impl Project {
         members: Vec<Member>,
         canister_cycle_floor: Nat,
         canisters: &[Principal],
+        function: ProjectType,
     ) -> Self {
         let identitys = members
             .iter()
@@ -57,6 +77,7 @@ impl Project {
             members: member,
             canister_cycle_floor: canister_cycle_floor,
             canisters: canisters.to_owned(),
+            function: function,
         }
     }
 
