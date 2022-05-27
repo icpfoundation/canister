@@ -30,17 +30,6 @@ fn init(manage_canister: Principal) {
 }
 
 #[update]
-pub fn update_manage_canister(mange_canister: Principal) {
-    let caller = ic_cdk::api::caller();
-    unsafe {
-        if OWNER != caller {
-            ic_cdk::trap("invalid identity");
-        }
-        MANAGE_CANISTER = mange_canister;
-    }
-}
-
-#[update]
 fn create_log(
     user: Principal,
     group_id: u64,

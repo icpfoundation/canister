@@ -163,14 +163,18 @@ visible_project:
 
 
 
-image_store:
-	dfx canister call image_store image_store '(principal "r7inp-6aaaa-aaaaa-aaabq-cai",principal "r7inp-6aaaa-aaaaa-aaabq-cai", 1,vec {0;1;2;3;4;5;6;7;8;9;10;112})' \
-	&& dfx canister call image_store image_store '(principal "r7inp-6aaaa-aaaaa-aaabq-cai", principal "r7inp-6aaaa-aaaaa-aaabq-cai", 2,vec {0;1;2;3;4;5;6;7;8;9;10;112;113;114})'
+group_image_store:
+	dfx canister call image_store group_image_store '($(user), 1,vec {0;1;2;3;4;5;6;7;8;9;10;112})' 
+
+
+project_image_store:
+	dfx canister call image_store project_image_store '($(user), 1,1,vec {0;1;2;3;4;5;6;7;8;9;10;112;113;115})' 
+
 
 get_image:
-	dfx canister call image_store get_image '(principal "r7inp-6aaaa-aaaaa-aaabq-cai", 1)' \
-	&& dfx canister call image_store get_image '(principal "r7inp-6aaaa-aaaaa-aaabq-cai", 2)'
-
+	dfx canister call image_store get_group_image '($(user), 1)' \
+	&& dfx canister call image_store get_project_image '($(user), 1,1)'
+	
 upgrade:
     dfx canister install --all --mode=upgrade
 
