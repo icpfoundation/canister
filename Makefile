@@ -29,9 +29,10 @@ projectCanisterCycleFloor := 1000000000000
 projectMembers := record {0 = $(user); 1 = record {name = $(projectMemberName);authority = $(projectMemberAuthority);identity = $(projectMemberIdentity);join_time = 0}}
 projectCanisters := vec {}
 projectType := variant {Wallet}
-projectCanister := principal "r7inp-6aaaa-aaaaa-aaabq-cai"
+projectCanister := principal "rkp4c-7iaaa-aaaaa-aaaca-cai"
 
-
+manageCanister := principal "rrkah-fqaaa-aaaaa-aaaaq-cai"
+logCanister := principal "renrk-eyaaa-aaaaa-aaada-cai"
 installCodeMode := variant { reinstall }
 wasm := 
 
@@ -39,11 +40,23 @@ wasm :=
 restart:
 	dfx stop && dfx start --clean --background
 
+dfxmange:
+	dfx deploy manage \
+	&& dfx deploy wallet \
+	&& dfx deploy test_canister
+
+dfxlogimage:
+	dfx deploy image_store  --argument '($(manageCanister))' \
+	&& dfx deploy canister_log  --argument '($(manageCanister))' \
+
+updatelog:
+	dfx canister call manage update_log_canister '($(logCanister))'
+
 deploy:
-	dfx deploy
-	
+	make dfxmange && make dfxlogimage && make updatelog
+
 set_controller:
-	dfx canister --wallet $$(dfx identity get-wallet) update-settings --all --controller r7inp-6aaaa-aaaaa-aaabq-cai
+	dfx canister --wallet $$(dfx identity get-wallet) update-settings --all --controller rrkah-fqaaa-aaaaa-aaaaq-cai
 
 get_canister_status:
 	$(dfxManageCanister) get_canister_status '($(user),$(groupId),$(projectId),$(projectCanister))'

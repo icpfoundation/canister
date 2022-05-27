@@ -27,17 +27,28 @@ use types::{Action, Profile};
 use user::User;
 
 type User_Storage = HashMap<Principal, User>;
-
+static mut OWNER: Principal = Principal::from_slice(&[0]);
 thread_local! {
     static USER_STORAGE: RefCell<User_Storage> = RefCell::default();
-    static  OWNER:RefCell<Option<Principal>> = RefCell::default();
+
 }
 
 #[init]
 fn init() {
-    OWNER.with(|owner| {
-        *owner.borrow_mut() = Some(ic_cdk::caller());
-    })
+    unsafe {
+        OWNER = ic_cdk::api::caller();
+    }
+}
+
+#[update]
+pub fn update_log_canister(log_canister: Principal) {
+    let caller = ic_cdk::api::caller();
+    unsafe {
+        if OWNER != caller {
+            ic_cdk::trap("invalid identity");
+        }
+        constant::LOG_CANISTER = log_canister;
+    }
 }
 
 async fn authority_check(canister: Principal, ii: Principal, sender: Principal) {

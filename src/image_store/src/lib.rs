@@ -9,10 +9,15 @@ use std::collections::HashMap;
 static mut Ptr: u64 = 0;
 static mut Page: u64 = 0;
 const PAGE_SIZE: u64 = 65536;
-static mut MANAGE_CANISTER: &str = "r7inp-6aaaa-aaaaa-aaabq-cai";
+static mut MANAGE_CANISTER: Principal = Principal::from_slice(&[0]);
+static mut OWNER: Principal = Principal::from_slice(&[0]);
 type Image_Storage = HashMap<Principal, HashMap<u64, Image>>;
+
+// image max size 200KB
+static mut IMAGE_MAX_SIZE: u64 = 204800;
 thread_local! {
     static IMAGE_STORAGE: RefCell<Image_Storage> = RefCell::default();
+
 }
 
 #[derive(CandidType, Debug, Deserialize, Clone)]
@@ -46,19 +51,36 @@ enum GetGroupMemberInfoRes {
     Err(String),
 }
 
+#[init]
+fn init(manage_canister: Principal) {
+    unsafe {
+        OWNER = ic_cdk::caller();
+        MANAGE_CANISTER = manage_canister;
+    }
+}
+
 #[update]
-async fn image_store(
-    canister: Principal,
-    user: Principal,
-    group_id: u64,
-    data: Vec<u8>,
-) -> Result<(), String> {
+pub fn update_manage_canister(mange_canister: Principal) {
+    let caller = ic_cdk::api::caller();
+    unsafe {
+        if OWNER != caller {
+            ic_cdk::trap("invalid identity");
+        }
+        MANAGE_CANISTER = mange_canister;
+    }
+}
+
+#[update]
+async fn image_store(user: Principal, group_id: u64, data: Vec<u8>) -> Result<(), String> {
     let caller = ic_cdk::api::caller();
 
     unsafe {
-        let manage_canister = Principal::from_text(MANAGE_CANISTER).unwrap();
-        let res: CallResult<(GetGroupMemberInfoRes,)> =
-            call(canister, "get_group_member_info", (user, group_id, caller)).await;
+        let res: CallResult<(GetGroupMemberInfoRes,)> = call(
+            MANAGE_CANISTER,
+            "get_group_member_info",
+            (user, group_id, caller),
+        )
+        .await;
         if let GetGroupMemberInfoRes::Ok(member) = res.unwrap().0 {
             return match member.authority {
                 Authority::Write | Authority::Operational => IMAGE_STORAGE.with(|image_store| {

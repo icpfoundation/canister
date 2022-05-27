@@ -14,8 +14,30 @@ struct User {
 }
 type Log_Storage = HashMap<User, BTreeMap<u64, Vec<Log>>>;
 const PAGE_SIZE: usize = 20;
+static mut OWNER: Principal = Principal::from_slice(&[0]);
+static mut MANAGE_CANISTER: Principal = Principal::from_slice(&[0]);
 thread_local! {
     static LOG_STORAGE: RefCell<Log_Storage> = RefCell::default();
+
+}
+
+#[init]
+fn init(manage_canister: Principal) {
+    unsafe {
+        OWNER = ic_cdk::caller();
+        MANAGE_CANISTER = manage_canister;
+    }
+}
+
+#[update]
+pub fn update_manage_canister(mange_canister: Principal) {
+    let caller = ic_cdk::api::caller();
+    unsafe {
+        if OWNER != caller {
+            ic_cdk::trap("invalid identity");
+        }
+        MANAGE_CANISTER = mange_canister;
+    }
 }
 
 #[update]
@@ -26,6 +48,13 @@ fn create_log(
     action: log::Action,
     log: Vec<u8>,
 ) {
+    let caller = ic_cdk::api::caller();
+    unsafe {
+        if caller != MANAGE_CANISTER {
+            return;
+        }
+    }
+
     let user = User {
         identity: user,
         group_id: group_id,

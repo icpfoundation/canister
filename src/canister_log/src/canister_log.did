@@ -5,7 +5,8 @@ type Action = variant{
     UpdateProjectCanister:record{nat64;nat64;text};
 };
 
-service: {
+service:(principal) ->{
     create_log:(principal,nat64,principal, blob) ->();
     get_log:(principal,nat64,nat64) -> (opt vec record{principal;nat64;Action;  vec  text}) query;
+    update_manage_canister:(principal) ->();
 }

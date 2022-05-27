@@ -4,7 +4,8 @@ type imageStoreRes = variant{
     Ok:null;
     Err:text;
 };
-service:{
-    image_store:(principal,principal,nat64, blob) ->(imageStoreRes);
+service:(principal) -> {
+    image_store:(principal,nat64, blob) ->(imageStoreRes);
     get_image:(principal,nat64) -> (blob) query;
+    update_manage_canister:(principal) -> ();
 }
