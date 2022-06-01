@@ -1,3 +1,4 @@
 service: {
     hello_world:() -> ()query;
+    __get_candid_interface_tmp_hack:() -> (text) query;
 }

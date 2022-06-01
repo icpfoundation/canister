@@ -41,16 +41,19 @@ pub struct User {
     pub groups: HashMap<u64, Group>,
 
     pub relation_project: HashMap<Principal, Vec<RelationProject>>,
+
+    pub create_time: u64,
 }
 
 impl User {
-    pub fn new(user_name: String, profile: Profile, identity: Principal) -> Self {
+    pub fn new(user_name: String, profile: Profile, identity: Principal, create_time: u64) -> Self {
         Self {
             user_name: user_name,
             profile: profile,
             identity: identity,
             groups: HashMap::new(),
             relation_project: HashMap::new(),
+            create_time: create_time,
         }
     }
 

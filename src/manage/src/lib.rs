@@ -91,7 +91,8 @@ fn add_user(name: String, profile: Profile) -> Result<(), String> {
         if let Some(_) = user_storage.borrow().get(&caller) {
             return Err("User already exists".to_string());
         }
-        let user = User::new(name, profile, caller);
+        let create_time = ic_cdk::api::time();
+        let user = User::new(name, profile, caller, create_time);
         user_storage.borrow_mut().insert(caller, user);
         Ok(())
     })
