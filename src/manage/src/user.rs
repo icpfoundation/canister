@@ -69,22 +69,27 @@ impl User {
             if let Profile::Private = self.profile {
                 return Err("user information is private and cannot be viewed".to_string());
             }
+
+            let mut cp_user = self.clone();
+            let publick_group: HashMap<u64, Group> = cp_user
+                .groups
+                .into_iter()
+                .filter(|(k, v)| {
+                    if let Profile::Public = v.visibility {
+                        return true;
+                    };
+                    if let Some(mem) = v.members.get(&sender) {
+                        return true;
+                    }
+                    return false;
+                })
+                .collect();
+
+            cp_user.groups = publick_group;
+            return Ok(cp_user);
+        } else {
+            return Ok(self.clone());
         }
-
-        let mut cp_user = self.clone();
-        let publick_group: HashMap<u64, Group> = cp_user
-            .groups
-            .into_iter()
-            .filter(|(k, v)| {
-                if let Profile::Public = v.visibility {
-                    return true;
-                };
-                return false;
-            })
-            .collect();
-
-        cp_user.groups = publick_group;
-        Ok(cp_user)
     }
 
     pub fn add_group(&mut self, group: Group, sender: Principal) -> Result<(), String> {
