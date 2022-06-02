@@ -12,6 +12,7 @@ groupMemberName := "m1"
 groupMemberAuthority :=  variant {Operational}
 groupMemberIdentity := $(user)
 groupMembers := record{0 =  $(user);1 = record { name = $(groupMemberName);authority =$(groupMemberAuthority); identity = $(groupMemberIdentity);join_time = 0}}
+groupUrl :="*****"
 
 projectMemberName := "member1"
 projectMemberAuthority := variant {Operational}
@@ -39,6 +40,7 @@ wasm :=
 .PHONY : restart deploy set_controller get_status add_user get_user_info add_group remove_group add_project add_group_member remove_group_member
 restart:
 	dfx stop && dfx start --clean --background
+
 
 dfxmange:
 	dfx deploy manage \
@@ -74,7 +76,8 @@ add_group:
 	description=$(groupDescription); \
 	visibility=$(visibility); \
 	projects = $(projects); \
-	members = vec {$(groupMembers)}})'
+	members = vec {$(groupMembers)}; \
+	url = $(groupUrl)})'
 
 remove_group:
 	$(dfxManageCanister) remove_group '($(user),$(groupId))'

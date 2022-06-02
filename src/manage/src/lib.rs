@@ -821,24 +821,31 @@ pub fn get_group_member_info(
 
 #[pre_upgrade]
 fn pre_upgrade() {
-    USER_STORAGE.with(|user_storage| {
-        let data_storage: Vec<(Principal, User)> = user_storage
-            .borrow()
-            .iter()
-            .map(|(k, v)| (k.clone(), v.clone()))
-            .collect();
-        ic_cdk::storage::stable_save((data_storage,)).expect("stable_save failed");
-    })
+    unsafe {
+        USER_STORAGE.with(|user_storage| {
+            let data_storage: Vec<(Principal, User)> = user_storage
+                .borrow()
+                .iter()
+                .map(|(k, v)| (k.clone(), v.clone()))
+                .collect();
+            ic_cdk::storage::stable_save((OWNER, constant::LOG_CANISTER, data_storage))
+                .expect("stable_save failed");
+        })
+    }
 }
 
 #[post_upgrade]
-fn post_update() {
-    let data_storage: (Vec<(Principal, User)>,) =
-        ic_cdk::storage::stable_restore().expect("data recovery failed");
-    let data_storage: User_Storage = data_storage.0.into_iter().collect();
-    USER_STORAGE.with(|user_storage| {
-        *user_storage.borrow_mut() = data_storage;
-    });
+fn post_upgrade() {
+    unsafe {
+        let data_storage: (Principal, Principal, Vec<(Principal, User)>) =
+            ic_cdk::storage::stable_restore().expect("data recovery failed");
+        OWNER = data_storage.0;
+        constant::LOG_CANISTER = data_storage.1;
+        let data_storage: User_Storage = data_storage.2.into_iter().collect();
+        USER_STORAGE.with(|user_storage| {
+            *user_storage.borrow_mut() = data_storage;
+        });
+    }
 }
 
 #[cfg(test)]
