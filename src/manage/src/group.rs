@@ -19,6 +19,7 @@ pub struct Group {
     pub description: String,
     pub projects: HashMap<u64, Project>,
     pub members: HashMap<Principal, Member>,
+    pub url: String,
 }
 
 impl Group {
@@ -30,6 +31,7 @@ impl Group {
         description: &str,
         projects: Vec<Project>,
         members: Vec<Member>,
+        url: String,
     ) -> Self {
         let member = members
             .iter()
@@ -50,6 +52,7 @@ impl Group {
             visibility: visibility,
             projects: project,
             members: member,
+            url: url,
         }
     }
 
