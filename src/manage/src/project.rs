@@ -90,6 +90,12 @@ impl Project {
                 if !Authority::authority_check(member.authority.clone(), opt.clone()) {
                     return Err(format!("project permission verification failed: user permissions: {:?},opt permissions: {:?}",member.authority.clone(),opt));
                 }
+                if let Some(expir) = member.expiration_time {
+                    if expir < ic_cdk::api::time() {
+                        return Err("Identity expiration".to_string());
+                    }
+                }
+
                 Ok(())
             }
         }

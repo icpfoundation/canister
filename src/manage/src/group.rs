@@ -65,6 +65,11 @@ impl Group {
                 if !Authority::authority_check(member.authority, opt) {
                     return Err(format!("permission verification failed: user permissions: {:?},opt permissions: {:?}",member.authority,opt) );
                 }
+                if let Some(expir) = member.expiration_time {
+                    if expir < ic_cdk::api::time() {
+                        return Err("Identity expiration".to_string());
+                    }
+                }
                 Ok(())
             }
         }

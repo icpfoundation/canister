@@ -71,7 +71,7 @@ impl User {
             }
 
             let mut cp_user = self.clone();
-            let publick_group: HashMap<u64, Group> = cp_user
+            let public_group: HashMap<u64, Group> = cp_user
                 .groups
                 .into_iter()
                 .filter(|(k, v)| {
@@ -79,13 +79,18 @@ impl User {
                         return true;
                     };
                     if let Some(mem) = v.members.get(&sender) {
+                        if let Some(expir) = mem.expiration_time {
+                            if expir < ic_cdk::api::time() {
+                                return false;
+                            }
+                        }
                         return true;
                     }
                     return false;
                 })
                 .collect();
 
-            cp_user.groups = publick_group;
+            cp_user.groups = public_group;
             return Ok(cp_user);
         } else {
             return Ok(self.clone());
