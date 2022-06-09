@@ -7,5 +7,11 @@
   },
   "manage": {
     "ic": "jqhuf-2aaaa-aaaan-qahxq-cai"
+  },
+  "test_canister": {
+    "ic": "4arnt-2yaaa-aaaan-qaiia-cai"
+  },
+  "wallet": {
+    "ic": "4hqlh-xaaaa-aaaan-qaiiq-cai"
   }
 }
