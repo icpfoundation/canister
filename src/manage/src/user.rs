@@ -446,9 +446,15 @@ impl User {
     ) -> Result<Option<Project>, String> {
         match self.groups.get(&group_id) {
             None => return Ok(None),
-            Some(group) => group
-                .get_project_info(project_id, sender)
-                .map(|x| x.cloned()),
+            Some(group) => {
+                if self.identity == sender {
+                    return Ok(group.projects.get(&project_id).cloned());
+                } else {
+                    group
+                        .get_project_info(project_id, sender)
+                        .map(|x| x.cloned())
+                }
+            }
         }
     }
 
@@ -465,6 +471,9 @@ impl User {
                 }
                 Profile::Private => match group.members.get(&sender) {
                     None => {
+                        if self.identity == sender {
+                            return Ok(Some(group.clone()));
+                        }
                         return Err("No permission".to_string());
                     }
                     Some(_) => {
