@@ -205,7 +205,9 @@ impl Group {
         member: Principal,
         sender: Principal,
     ) -> Result<(), String> {
-        self.identity_check(Authority::Operational, sender)?;
+        if member != sender {
+            self.identity_check(Authority::Operational, sender)?;
+        }
         match self.projects.get_mut(&project_id) {
             None => Err("Project does not exist".to_string()),
             Some(project) => project.remove_member(member),

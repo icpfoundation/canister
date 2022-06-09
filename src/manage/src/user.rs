@@ -252,7 +252,9 @@ impl User {
         member: Principal,
         sender: Principal,
     ) -> Result<(), String> {
-        self.identity_check(sender)?;
+        if member != sender {
+            self.identity_check(sender)?;
+        }
         match self.groups.get_mut(&group_id) {
             None => return Err("Group does not exist".to_string()),
             Some(group) => {
