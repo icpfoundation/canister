@@ -844,11 +844,6 @@ fn post_upgrade() {
         let data_storage: User_Storage = data_storage.2.into_iter().collect();
         USER_STORAGE.with(|user_storage| {
             *user_storage.borrow_mut() = data_storage;
-            let test_account = Principal::from_text(
-                "hjwh4-2ujff-ndprv-gq55f-4yuw4-cmqgf-llylp-7rywt-c3dbx-gfozt-5qe",
-            )
-            .unwrap();
-            user_storage.borrow_mut().remove(&test_account);
         });
     }
 }

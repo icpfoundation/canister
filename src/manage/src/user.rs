@@ -223,7 +223,11 @@ impl User {
                 if let Some(project) = group.projects.get(&project_id) {
                     members = project.members.keys().map(|x| *x).collect();
                 }
-                group.remove_project(project_id, sender)?;
+                if self.identity == sender {
+                    group.projects.remove(&project_id);
+                } else {
+                    group.remove_project(project_id, sender)?;
+                }
             }
         };
 
