@@ -523,4 +523,25 @@ impl User {
             ),
         }
     }
+
+    pub fn update_project_name_and_description_and_visibility(
+        &mut self,
+        group_id: u64,
+        project_id: u64,
+        name: String,
+        description: String,
+        visibility: Profile,
+        sender: Principal,
+    ) -> Result<(), String> {
+        match self.groups.get_mut(&group_id) {
+            None => return Err("group does not exist".to_string()),
+            Some(group) => group.update_project_name_and_description_and_visibility(
+                project_id,
+                name,
+                description,
+                visibility,
+                sender,
+            ),
+        }
+    }
 }

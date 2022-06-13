@@ -275,4 +275,18 @@ impl Project {
         }
         return Err("canisters do not exist in the project".to_string());
     }
+
+    pub fn update_name_and_description_and_visibility(
+        &mut self,
+        name: String,
+        description: String,
+        visibility: Profile,
+        sender: Principal,
+    ) -> Result<(), String> {
+        self.identity_check(Authority::Write, sender)?;
+        self.name = name;
+        self.description = description;
+        self.visibility = visibility;
+        Ok(())
+    }
 }

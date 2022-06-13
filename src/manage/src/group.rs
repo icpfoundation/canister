@@ -363,4 +363,23 @@ impl Group {
         self.visibility = visibility;
         Ok(())
     }
+
+    pub fn update_project_name_and_description_and_visibility(
+        &mut self,
+        project_id: u64,
+        name: String,
+        description: String,
+        visibility: Profile,
+        sender: Principal,
+    ) -> Result<(), String> {
+        match self.projects.get_mut(&project_id) {
+            None => Err("Project does not exist".to_string()),
+            Some(project) => project.update_name_and_description_and_visibility(
+                name,
+                description,
+                visibility,
+                sender,
+            ),
+        }
+    }
 }
