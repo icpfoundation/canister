@@ -350,34 +350,42 @@ impl Group {
         }
     }
 
-    pub fn update_name_and_description_and_visibility(
+    pub fn update_basic_information(
         &mut self,
         name: String,
         description: String,
         visibility: Profile,
+        url: String,
         sender: Principal,
     ) -> Result<(), String> {
         self.identity_check(Authority::Write, sender)?;
         self.name = name;
         self.description = description;
         self.visibility = visibility;
+        self.url = url;
         Ok(())
     }
 
-    pub fn update_project_name_and_description_and_visibility(
+    pub fn update_project_basic_information(
         &mut self,
         project_id: u64,
         name: String,
         description: String,
         visibility: Profile,
+        git: String,
+        canister_cycle_floor: Nat,
+        canisters: &[Principal],
         sender: Principal,
     ) -> Result<(), String> {
         match self.projects.get_mut(&project_id) {
             None => Err("Project does not exist".to_string()),
-            Some(project) => project.update_name_and_description_and_visibility(
+            Some(project) => project.update_basic_information(
                 name,
                 description,
                 visibility,
+                git,
+                canister_cycle_floor,
+                canisters,
                 sender,
             ),
         }

@@ -505,41 +505,45 @@ impl User {
         }
     }
 
-    pub fn update_group_name_and_description_and_visibility(
+    pub fn update_group_basic_information(
         &mut self,
         group_id: u64,
         name: String,
         description: String,
         visibility: Profile,
+        url: String,
         sender: Principal,
     ) -> Result<(), String> {
         match self.groups.get_mut(&group_id) {
             None => return Err("group does not exist".to_string()),
-            Some(group) => group.update_name_and_description_and_visibility(
-                name,
-                description,
-                visibility,
-                sender,
-            ),
+            Some(group) => {
+                group.update_basic_information(name, description, visibility, url, sender)
+            }
         }
     }
 
-    pub fn update_project_name_and_description_and_visibility(
+    pub fn update_project_basic_information(
         &mut self,
         group_id: u64,
         project_id: u64,
         name: String,
         description: String,
         visibility: Profile,
+        git: String,
+        canister_cycle_floor: Nat,
+        canisters: &[Principal],
         sender: Principal,
     ) -> Result<(), String> {
         match self.groups.get_mut(&group_id) {
             None => return Err("group does not exist".to_string()),
-            Some(group) => group.update_project_name_and_description_and_visibility(
+            Some(group) => group.update_project_basic_information(
                 project_id,
                 name,
                 description,
                 visibility,
+                git,
+                canister_cycle_floor,
+                canisters,
                 sender,
             ),
         }

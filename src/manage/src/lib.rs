@@ -626,12 +626,13 @@ pub async fn update_project_member_authority(
 }
 
 #[update]
-async fn update_group_name_and_description_and_visibility(
+async fn update_group_basic_information(
     account: Principal,
     group_id: u64,
     name: String,
     description: String,
     visibility: Profile,
+    url: String,
 ) -> Result<(), String> {
     let caller = ic_cdk::api::caller();
     USER_STORAGE.with(
@@ -639,11 +640,12 @@ async fn update_group_name_and_description_and_visibility(
             None => {
                 return Err("user does not exist".to_string());
             }
-            Some(user) => user.update_group_name_and_description_and_visibility(
+            Some(user) => user.update_group_basic_information(
                 group_id,
                 name.clone(),
                 description.clone(),
                 visibility,
+                url,
                 caller,
             ),
         },
@@ -661,13 +663,16 @@ async fn update_group_name_and_description_and_visibility(
 }
 
 #[update]
-async fn update_project_name_and_description_and_visibility(
+async fn update_project_basic_information(
     account: Principal,
     group_id: u64,
     project_id: u64,
     name: String,
     description: String,
     visibility: Profile,
+    git: String,
+    canister_cycle_floor: Nat,
+    canisters: Vec<Principal>,
 ) -> Result<(), String> {
     let caller = ic_cdk::api::caller();
     USER_STORAGE.with(
@@ -675,12 +680,15 @@ async fn update_project_name_and_description_and_visibility(
             None => {
                 return Err("user does not exist".to_string());
             }
-            Some(user) => user.update_project_name_and_description_and_visibility(
+            Some(user) => user.update_project_basic_information(
                 group_id,
                 project_id,
                 name.clone(),
                 description.clone(),
                 visibility,
+                git,
+                canister_cycle_floor,
+                &canisters,
                 caller,
             ),
         },

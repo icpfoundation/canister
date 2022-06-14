@@ -276,17 +276,23 @@ impl Project {
         return Err("canisters do not exist in the project".to_string());
     }
 
-    pub fn update_name_and_description_and_visibility(
+    pub fn update_basic_information(
         &mut self,
         name: String,
         description: String,
         visibility: Profile,
+        git: String,
+        canister_cycle_floor: Nat,
+        canisters: &[Principal],
         sender: Principal,
     ) -> Result<(), String> {
         self.identity_check(Authority::Write, sender)?;
         self.name = name;
         self.description = description;
         self.visibility = visibility;
+        self.git_repo_url = git;
+        self.canister_cycle_floor = canister_cycle_floor;
+        self.canisters = canisters.to_owned();
         Ok(())
     }
 }
