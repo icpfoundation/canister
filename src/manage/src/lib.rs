@@ -113,7 +113,22 @@ fn visible_project() -> Vec<Vec<(Principal, u64, Group)>> {
                         }
                         false
                     })
-                    .map(|(group_id, group)| (*k, *group_id, group.clone()))
+                    .map(|(groupid, group)| {
+                        let mut filter_group = group.clone();
+                        let res: HashMap<u64, Project> = filter_group
+                            .projects
+                            .iter()
+                            .filter(|(pid, pinfo)| {
+                                if let Profile::Public = pinfo.visibility {
+                                    return true;
+                                }
+                                return false;
+                            })
+                            .map(|(pidx, projectInfo)| (*pidx, projectInfo.clone()))
+                            .collect();
+                        filter_group.projects = res;
+                        (*k, *groupid, filter_group)
+                    })
                     .collect::<Vec<(Principal, u64, Group)>>()
             })
             .collect::<Vec<Vec<(Principal, u64, Group)>>>()
@@ -864,34 +879,34 @@ pub fn get_group_member_info(
     })
 }
 
-#[pre_upgrade]
-fn pre_upgrade() {
-    unsafe {
-        USER_STORAGE.with(|user_storage| {
-            let data_storage: Vec<(Principal, User)> = user_storage
-                .borrow()
-                .iter()
-                .map(|(k, v)| (k.clone(), v.clone()))
-                .collect();
-            ic_cdk::storage::stable_save((OWNER, constant::LOG_CANISTER, data_storage))
-                .expect("stable_save failed");
-        })
-    }
-}
+// #[pre_upgrade]
+// fn pre_upgrade() {
+//     unsafe {
+//         USER_STORAGE.with(|user_storage| {
+//             let data_storage: Vec<(Principal, User)> = user_storage
+//                 .borrow()
+//                 .iter()
+//                 .map(|(k, v)| (k.clone(), v.clone()))
+//                 .collect();
+//             ic_cdk::storage::stable_save((OWNER, constant::LOG_CANISTER, data_storage))
+//                 .expect("stable_save failed");
+//         })
+//     }
+// }
 
-#[post_upgrade]
-fn post_upgrade() {
-    unsafe {
-        let data_storage: (Principal, Principal, Vec<(Principal, User)>) =
-            ic_cdk::storage::stable_restore().expect("data recovery failed");
-        OWNER = data_storage.0;
-        constant::LOG_CANISTER = data_storage.1;
-        let data_storage: User_Storage = data_storage.2.into_iter().collect();
-        USER_STORAGE.with(|user_storage| {
-            *user_storage.borrow_mut() = data_storage;
-        });
-    }
-}
+// #[post_upgrade]
+// fn post_upgrade() {
+//     unsafe {
+//         let data_storage: (Principal, Principal, Vec<(Principal, User)>) =
+//             ic_cdk::storage::stable_restore().expect("data recovery failed");
+//         OWNER = data_storage.0;
+//         constant::LOG_CANISTER = data_storage.1;
+//         let data_storage: User_Storage = data_storage.2.into_iter().collect();
+//         USER_STORAGE.with(|user_storage| {
+//             *user_storage.borrow_mut() = data_storage;
+//         });
+//     }
+// }
 
 #[cfg(test)]
 mod test_util {
