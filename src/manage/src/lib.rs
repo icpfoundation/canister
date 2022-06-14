@@ -879,20 +879,20 @@ pub fn get_group_member_info(
     })
 }
 
-// #[pre_upgrade]
-// fn pre_upgrade() {
-//     unsafe {
-//         USER_STORAGE.with(|user_storage| {
-//             let data_storage: Vec<(Principal, User)> = user_storage
-//                 .borrow()
-//                 .iter()
-//                 .map(|(k, v)| (k.clone(), v.clone()))
-//                 .collect();
-//             ic_cdk::storage::stable_save((OWNER, constant::LOG_CANISTER, data_storage))
-//                 .expect("stable_save failed");
-//         })
-//     }
-// }
+#[pre_upgrade]
+fn pre_upgrade() {
+    unsafe {
+        USER_STORAGE.with(|user_storage| {
+            let data_storage: Vec<(Principal, User)> = user_storage
+                .borrow()
+                .iter()
+                .map(|(k, v)| (k.clone(), v.clone()))
+                .collect();
+            ic_cdk::storage::stable_save((OWNER, constant::LOG_CANISTER, data_storage))
+                .expect("stable_save failed");
+        })
+    }
+}
 
 #[post_upgrade]
 fn post_upgrade() {
