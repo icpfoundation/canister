@@ -894,19 +894,19 @@ pub fn get_group_member_info(
 //     }
 // }
 
-// #[post_upgrade]
-// fn post_upgrade() {
-//     unsafe {
-//         let data_storage: (Principal, Principal, Vec<(Principal, User)>) =
-//             ic_cdk::storage::stable_restore().expect("data recovery failed");
-//         OWNER = data_storage.0;
-//         constant::LOG_CANISTER = data_storage.1;
-//         let data_storage: User_Storage = data_storage.2.into_iter().collect();
-//         USER_STORAGE.with(|user_storage| {
-//             *user_storage.borrow_mut() = data_storage;
-//         });
-//     }
-// }
+#[post_upgrade]
+fn post_upgrade() {
+    unsafe {
+        let data_storage: (Principal, Principal, Vec<(Principal, User)>) =
+            ic_cdk::storage::stable_restore().expect("data recovery failed");
+        OWNER = data_storage.0;
+        constant::LOG_CANISTER = data_storage.1;
+        let data_storage: User_Storage = data_storage.2.into_iter().collect();
+        USER_STORAGE.with(|user_storage| {
+            *user_storage.borrow_mut() = data_storage;
+        });
+    }
+}
 
 #[cfg(test)]
 mod test_util {
