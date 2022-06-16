@@ -112,6 +112,48 @@ impl User {
         Ok(())
     }
 
+    pub fn add_group_relation(
+        &mut self,
+        relation_project_user: Principal,
+        group_id: u64,
+    ) -> Result<(), String> {
+        if let Some(relation) = self.relation_project.get_mut(&relation_project_user) {
+            relation.push(RelationProject::new(group_id, 0));
+        } else {
+            self.relation_project
+                .insert(relation_project_user, Vec::new());
+            self.relation_project
+                .get_mut(&relation_project_user)
+                .unwrap()
+                .push(RelationProject::new(group_id, 0));
+        }
+
+        Ok(())
+    }
+
+    pub fn remove_group_relation(
+        &mut self,
+        relation_project_user: Principal,
+        group_id: u64,
+    ) -> Result<(), String> {
+        match self.relation_project.get_mut(&relation_project_user) {
+            None => Ok(()),
+            Some(projects) => {
+                let mut index: Option<usize> = None;
+                for (k, v) in projects.iter().enumerate() {
+                    if v.group_id == group_id {
+                        index = Some(k);
+                        break;
+                    }
+                }
+                if let Some(idx) = index {
+                    projects.remove(idx);
+                }
+                Ok(())
+            }
+        }
+    }
+
     pub fn add_project_relation(
         &mut self,
         relation_project_user: Principal,

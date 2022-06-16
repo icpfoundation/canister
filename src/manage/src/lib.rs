@@ -272,6 +272,15 @@ async fn add_group_member(account: Principal, group_id: u64, member: Member) -> 
         },
     )?;
 
+    USER_STORAGE.with(|user_storage| {
+        match user_storage.borrow_mut().get_mut(&member.identity) {
+            None => {
+                return Err("user does not exist".to_string());
+            }
+            Some(user) => user.add_group_relation(account, group_id),
+        }
+    })?;
+
     log!(
         &account.to_string(),
         group_id,
@@ -299,6 +308,14 @@ async fn remove_group_member(
         },
     )?;
 
+    USER_STORAGE.with(
+        |user_storage| match user_storage.borrow_mut().get_mut(&member) {
+            None => {
+                return Err("user does not exist".to_string());
+            }
+            Some(user) => user.remove_group_relation(account, group_id),
+        },
+    )?;
     log!(
         &account.to_string(),
         group_id,
