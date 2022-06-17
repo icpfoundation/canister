@@ -282,12 +282,25 @@ impl User {
         member: Member,
         sender: Principal,
     ) -> Result<(), String> {
-        self.identity_check(sender)?;
         match self.groups.get_mut(&group_id) {
             None => return Err("Group does not exist".to_string()),
             Some(group) => {
-                group.add_member(member)?;
-                Ok(())
+                if sender == self.identity {
+                    group.add_member(member)?;
+                    Ok(())
+                } else {
+                    let mut approve = false;
+                    if let Some(account) = group.members.get(&sender) {
+                        if let Authority::Operational = account.authority {
+                            approve = true;
+                        }
+                    }
+                    if approve {
+                        group.add_member(member)?;
+                        return Ok(());
+                    }
+                    return Err("Insufficient permissions".to_string());
+                }
             }
         }
     }
