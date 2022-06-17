@@ -14,7 +14,7 @@ use std::pin::Pin;
 #[macro_use]
 use crate::operation;
 
-#[derive(CandidType, Debug, Deserialize, Clone)]
+#[derive(CandidType, Debug, Deserialize, Clone, Eq, PartialEq, Copy)]
 pub struct RelationProject {
     pub group_id: u64,
     pub project_id: u64,
@@ -120,12 +120,23 @@ impl User {
         if let Some(relation) = self.relation_project.get_mut(&relation_project_user) {
             relation.push(RelationProject::new(group_id, 0));
         } else {
+            let rela = RelationProject::new(group_id, 0);
             self.relation_project
                 .insert(relation_project_user, Vec::new());
+            for data in self
+                .relation_project
+                .get(&relation_project_user)
+                .unwrap()
+                .iter()
+            {
+                if *data == rela {
+                    return Ok(());
+                }
+            }
             self.relation_project
                 .get_mut(&relation_project_user)
                 .unwrap()
-                .push(RelationProject::new(group_id, 0));
+                .push(rela);
         }
 
         Ok(())
@@ -163,12 +174,23 @@ impl User {
         if let Some(relation) = self.relation_project.get_mut(&relation_project_user) {
             relation.push(RelationProject::new(group_id, project_id));
         } else {
+            let rela = RelationProject::new(group_id, project_id);
             self.relation_project
                 .insert(relation_project_user, Vec::new());
+            for data in self
+                .relation_project
+                .get(&relation_project_user)
+                .unwrap()
+                .iter()
+            {
+                if *data == rela {
+                    return Ok(());
+                }
+            }
             self.relation_project
                 .get_mut(&relation_project_user)
                 .unwrap()
-                .push(RelationProject::new(group_id, project_id));
+                .push(rela);
         }
 
         Ok(())
