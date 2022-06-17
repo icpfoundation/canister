@@ -300,7 +300,7 @@ async fn remove_group_member(
 ) -> Result<(), String> {
     let caller = ic_cdk::api::caller();
     USER_STORAGE.with(
-        |user_storage| match user_storage.borrow_mut().get_mut(&caller) {
+        |user_storage| match user_storage.borrow_mut().get_mut(&account) {
             None => {
                 return Err("user does not exist".to_string());
             }
