@@ -117,22 +117,18 @@ impl User {
         relation_project_user: Principal,
         group_id: u64,
     ) -> Result<(), String> {
+        let rela = RelationProject::new(group_id, 0);
         if let Some(relation) = self.relation_project.get_mut(&relation_project_user) {
-            relation.push(RelationProject::new(group_id, 0));
-        } else {
-            let rela = RelationProject::new(group_id, 0);
-            self.relation_project
-                .insert(relation_project_user, Vec::new());
-            for data in self
-                .relation_project
-                .get(&relation_project_user)
-                .unwrap()
-                .iter()
-            {
+            for data in relation.iter() {
                 if *data == rela {
                     return Ok(());
                 }
             }
+            relation.push(rela);
+        } else {
+            self.relation_project
+                .insert(relation_project_user, Vec::new());
+
             self.relation_project
                 .get_mut(&relation_project_user)
                 .unwrap()
@@ -171,22 +167,18 @@ impl User {
         group_id: u64,
         project_id: u64,
     ) -> Result<(), String> {
+        let rela = RelationProject::new(group_id, project_id);
         if let Some(relation) = self.relation_project.get_mut(&relation_project_user) {
-            relation.push(RelationProject::new(group_id, project_id));
-        } else {
-            let rela = RelationProject::new(group_id, project_id);
-            self.relation_project
-                .insert(relation_project_user, Vec::new());
-            for data in self
-                .relation_project
-                .get(&relation_project_user)
-                .unwrap()
-                .iter()
-            {
+            for data in relation.iter() {
                 if *data == rela {
                     return Ok(());
                 }
             }
+            relation.push(rela);
+        } else {
+            self.relation_project
+                .insert(relation_project_user, Vec::new());
+
             self.relation_project
                 .get_mut(&relation_project_user)
                 .unwrap()
