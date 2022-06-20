@@ -285,8 +285,11 @@ impl Project {
         canister_cycle_floor: Nat,
         canisters: &[Principal],
         sender: Principal,
+        check: bool,
     ) -> Result<(), String> {
-        self.identity_check(Authority::Write, sender)?;
+        if check {
+            self.identity_check(Authority::Write, sender)?;
+        }
         self.name = name;
         self.description = description;
         self.visibility = visibility;

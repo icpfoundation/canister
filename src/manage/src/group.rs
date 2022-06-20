@@ -56,7 +56,7 @@ impl Group {
         }
     }
 
-    fn identity_check(&self, opt: Authority, sender: Principal) -> Result<(), String> {
+    pub fn identity_check(&self, opt: Authority, sender: Principal) -> Result<(), String> {
         match self.members.get(&sender) {
             None => {
                 return Err("not in the group member list".to_string());
@@ -377,8 +377,13 @@ impl Group {
         canisters: &[Principal],
         sender: Principal,
     ) -> Result<(), String> {
+        let mut check = true;
+        if let Ok(()) = self.identity_check(Authority::Write, sender) {
+            check = false;
+        }
         match self.projects.get_mut(&project_id) {
             None => Err("Project does not exist".to_string()),
+
             Some(project) => project.update_basic_information(
                 name,
                 description,
@@ -387,6 +392,7 @@ impl Group {
                 canister_cycle_floor,
                 canisters,
                 sender,
+                check,
             ),
         }
     }
