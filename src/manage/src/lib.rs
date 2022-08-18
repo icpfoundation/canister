@@ -459,11 +459,10 @@ async fn remove_project_canister(
 
 #[update]
 async fn update_controller(
+    new_controller: Principal,
     canister: Principal,
 ) -> Result<(), String>{
-    let caller = ic_cdk::api::caller();
-
-    let controllers: Option<Vec<Principal>> = Some(vec![caller]);
+    let controllers: Option<Vec<Principal>> = Some(vec![new_controller]);
     let compute_allocation: Nat = "0".parse().unwrap();
     let memory_allocation: Nat = "0".parse().unwrap();
     let freezing_threshold: Nat = "2_592_000".parse().unwrap();
