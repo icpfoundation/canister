@@ -481,6 +481,26 @@ async fn update_controller(
 }
 
 #[update]
+async fn delete_canister_directly(
+    canister: Principal,
+) -> Result<(), String>{
+    // let caller = ic_cdk::api::caller();
+    // let controllers: Option<Vec<Principal>> = Some(vec![caller]);
+    // let compute_allocation: Nat = "0".parse().unwrap();
+    // let memory_allocation: Nat = "0".parse().unwrap();
+    // let freezing_threshold: Nat = "2_592_000".parse().unwrap();
+    // let canister_settings = CanisterSettings::new(
+    //     controllers,
+    //     Some(compute_allocation),
+    //     Some(memory_allocation),
+    //     Some(freezing_threshold),
+    // );
+    // let mange_canister = ManageCanister::new(canister, canister_settings);
+
+    return ManageCanister::delete_canister(canister).await;
+}
+
+#[update]
 pub async fn update_project_git_repo_url(
     account: Principal,
     group_id: u64,
