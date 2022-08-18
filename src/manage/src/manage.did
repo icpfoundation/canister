@@ -154,6 +154,7 @@ service :{
     remove_group_member:(principal, nat64,principal) ->(OptGroupRes);
     add_project_canister:(principal,nat64,nat64,principal) -> (OptGroupRes);
     remove_project_canister:(principal,nat64,nat64,principal) -> (OptGroupRes);
+    update_controller:(principal) -> (OptGroupRes);
     update_project_git_repo_url:(principal,nat64,nat64,text) -> (OptGroupRes);
     update_project_visibility:(principal,nat64,nat64,Profile) -> (OptGroupRes);
     update_project_description:(principal,nat64,nat64,text) -> (OptGroupRes);
